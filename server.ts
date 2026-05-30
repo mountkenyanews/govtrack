@@ -2318,8 +2318,6 @@ app.post("/api/admin/news", (req, res) => {
 
 // Serve Vite or Static files depending on environment
 async function startServer() {
-  await loadDatabase();
-
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -2334,8 +2332,16 @@ async function startServer() {
     });
   }
 
+  // Start listening immediately so Railway healthcheck passes right away
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`GovTrack server operating live at http://localhost:${PORT}`);
+    // Load database AFTER server is already accepting connections
+    loadDatabase().then(() => {
+      console.log("Database ready. GovTrack is fully operational.");
+    }).catch((err) => {
+      console.error("Database load failed, using seed data:", err);
+      seedInitialData();
+    });
   });
 }
 
