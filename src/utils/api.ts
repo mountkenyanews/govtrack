@@ -9,11 +9,11 @@ const API_BASE = ""; // Relative paths fit our setup perfectly!
 
 // Token helpers
 export function getSavedToken(): string | null {
-  return localStorage.getItem("govtrack_token");
+  return sessionStorage.getItem("govtrack_token");
 }
 
 export function getSavedUser(): User | null {
-  const data = localStorage.getItem("govtrack_user");
+  const data = sessionStorage.getItem("govtrack_user");
   if (!data) return null;
   try {
     return JSON.parse(data);
@@ -23,13 +23,13 @@ export function getSavedUser(): User | null {
 }
 
 export function saveSession(user: User, token: string) {
-  localStorage.setItem("govtrack_token", token);
-  localStorage.setItem("govtrack_user", JSON.stringify(user));
+  sessionStorage.setItem("govtrack_token", token);
+  sessionStorage.setItem("govtrack_user", JSON.stringify(user));
 }
 
 export function clearSession() {
-  localStorage.removeItem("govtrack_token");
-  localStorage.removeItem("govtrack_user");
+  sessionStorage.removeItem("govtrack_token");
+  sessionStorage.removeItem("govtrack_user");
 }
 
 // Global Custom Event to broadcast session changes to components instantly!
@@ -82,7 +82,7 @@ export const api = {
 
   async getMe(): Promise<User> {
     const res = await apiFetch("/api/auth/me");
-    localStorage.setItem("govtrack_user", JSON.stringify(res.user));
+    sessionStorage.setItem("govtrack_user", JSON.stringify(res.user));
     broadcastSessionChange();
     return res.user;
   },
@@ -92,7 +92,7 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(data),
     });
-    localStorage.setItem("govtrack_user", JSON.stringify(res.user));
+    sessionStorage.setItem("govtrack_user", JSON.stringify(res.user));
     broadcastSessionChange();
     return res.user;
   },

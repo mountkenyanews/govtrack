@@ -6,7 +6,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
+// Vite is imported dynamically in dev mode only (see startServer)
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, Poll, PollOption, Vote, Politician, Comment, NewsItem, PlatformStats, AppNotification, DevelopmentProgress } from "./src/types";
 
@@ -814,7 +814,31 @@ async function saveDatabase() {
   }
 }
 
-// loadDatabase() is now awaited in startServer()
+// Cache the promise so we load the database once, shared across requests/cold starts
+let databaseLoadedPromise: Promise<void> | null = null;
+
+function getDatabaseLoadedPromise(): Promise<void> {
+  if (!databaseLoadedPromise) {
+    databaseLoadedPromise = loadDatabase();
+  }
+  return databaseLoadedPromise;
+}
+
+// Middleware to ensure database is loaded before processing API requests
+app.use(async (req, res, next) => {
+  if (!req.path.startsWith("/api/")) {
+    return next();
+  }
+  try {
+    await getDatabaseLoadedPromise();
+    next();
+  } catch (err) {
+    console.error("[Database Middleware] Error awaiting database load:", err);
+    next(); // Fallback to current memory state
+  }
+});
+
+// loadDatabase() is now awaited in startServer() and in the middleware above
 
 // ---------------------- API ROUTES ----------------------
 
@@ -2365,17 +2389,18 @@ app.post("/api/admin/news", (req, res) => {
 // Serve Vite or Static files depending on environment
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (!process.env.VERCEL) {
+    // Only serve static files when running standalone (not on Vercel)
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath, { maxAge: "1d" }));
     // SPA fallback: only for non-API, non-asset requests
     app.get("*", (req, res, next) => {
-      // Don't intercept API routes or file requests with extensions
       if (req.path.startsWith("/api/") || req.path.includes(".")) {
         return next();
       }
@@ -2383,17 +2408,30 @@ async function startServer() {
     });
   }
 
-  // Start listening immediately so Railway healthcheck passes right away
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`GovTrack server operating live at http://localhost:${PORT}`);
-    // Load database AFTER server is already accepting connections
-    loadDatabase().then(() => {
-      console.log("Database ready. GovTrack is fully operational.");
+  // Start listening only when not on Vercel (Vercel handles this)
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`GovTrack server operating live at http://localhost:${PORT}`);
+      getDatabaseLoadedPromise().then(() => {
+        console.log("Database ready. GovTrack is fully operational.");
+      }).catch((err) => {
+        console.error("Database load failed, using seed data:", err);
+        seedInitialData();
+      });
+    });
+  } else {
+    // Vercel serverless: load database immediately
+    getDatabaseLoadedPromise().then(() => {
+      console.log("[Vercel] Database ready.");
     }).catch((err) => {
-      console.error("Database load failed, using seed data:", err);
+      console.error("[Vercel] Database load failed, using seed data:", err);
       seedInitialData();
     });
-  });
+  }
 }
 
 startServer();
+
+// Export for Vercel serverless
+export default app;
+
