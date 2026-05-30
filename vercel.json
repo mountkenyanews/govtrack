@@ -4,8 +4,8 @@
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/sitemap.xml", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/sitemap.xml", "destination": "/api/index" },
     { "source": "/robots.txt", "destination": "/robots.txt" }
   ],
   "headers": [
