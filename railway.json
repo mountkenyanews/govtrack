@@ -4,8 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "buildCommand": "npm run build",
-    "startCommand": "npm run start",
+    "startCommand": "NODE_ENV=production node dist/server.cjs",
     "healthcheckPath": "/",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
