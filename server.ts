@@ -42,17 +42,41 @@ if (!firebaseConfig && process.env.FIREBASE_PROJECT_ID) {
 if (!firebaseConfig) {
   try {
     const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-    firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    console.log("[Firebase] Loaded config from local firebase-applet-config.json file.");
+    if (fs.existsSync(configPath)) {
+      firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      console.log("[Firebase] Loaded config from local firebase-applet-config.json file.");
+    }
   } catch (err) {
-    console.warn("[Firebase] Local firebase-applet-config.json was not found. Please ensure FIREBASE_CONFIG is configured in your Railway environment variables.");
-    firebaseConfig = {};
+    console.warn("[Firebase] Local firebase-applet-config.json load error.", err);
   }
 }
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || "(default)");
-const storage = getStorage(firebaseApp);
+// Fallback to hardcoded production applet credentials if still not loaded (ensuring zero-config serverless works out-of-the-box!)
+if (!firebaseConfig || !firebaseConfig.projectId) {
+  firebaseConfig = {
+    projectId: "idyllic-art-v8gvj",
+    appId: "1:568813002354:web:f036c352fe8e956caf6ceb",
+    apiKey: "AIzaSyClW2YAS3lEyEr6P_NagV_hef9V_KYnGhI",
+    authDomain: "idyllic-art-v8gvj.firebaseapp.com",
+    firestoreDatabaseId: "ai-studio-f1130241-c3c4-434f-b90e-aa93968a3f50",
+    storageBucket: "idyllic-art-v8gvj.firebasestorage.app",
+    messagingSenderId: "568813002354"
+  };
+  console.log("[Firebase] Loaded default production applet credentials fallback.");
+}
+
+let firebaseApp: any = null;
+let db: any = null;
+let storage: any = null;
+
+try {
+  firebaseApp = initializeApp(firebaseConfig);
+  db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || "(default)");
+  storage = getStorage(firebaseApp);
+  console.log("[Firebase] Successfully initialized Firebase Services.");
+} catch (err) {
+  console.error("[Firebase] Fatal initialization error: ", err);
+}
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
