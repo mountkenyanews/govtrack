@@ -135,9 +135,13 @@ ${allPages.map(page => `  <url>
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATABASE_FILE = path.join(DATA_DIR, "database.json");
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Ensure data directory exists (only when running locally on writeable environments; skip on Vercel)
+if (!process.env.VERCEL && !fs.existsSync(DATA_DIR)) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (err) {
+    console.warn("Failed to create local data directory:", err);
+  }
 }
 
 // Global In-Memory Database State
