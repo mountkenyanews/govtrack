@@ -1198,18 +1198,19 @@ app.post("/api/polls/:id/vote", (req, res) => {
   }
 
   // Duplicate Prevention Check
-  // 1. By user_id if logged in
+  // Logged-in users: check by user_id ONLY (allows multiple users on same network)
+  // Anonymous users: check by IP hash (prevent spam from same device)
   if (user_id) {
     const userAlreadyVoted = DB.votes.some(v => v.poll_id === pollId && v.user_id === user_id);
     if (userAlreadyVoted) {
       return res.status(400).json({ error: "You have already cast your vote in this political poll." });
     }
-  }
-
-  // 2. By IP Hash
-  const ipAlreadyVoted = DB.votes.some(v => v.poll_id === pollId && v.ip_hash === ip_hash);
-  if (ipAlreadyVoted) {
-    return res.status(400).json({ error: "A vote from your current network connection has already been submitted." });
+  } else {
+    // Only apply IP check for anonymous/guest voters
+    const ipAlreadyVoted = DB.votes.some(v => v.poll_id === pollId && v.ip_hash === ip_hash && !v.user_id);
+    if (ipAlreadyVoted) {
+      return res.status(400).json({ error: "A vote from your current network connection has already been submitted. Please log in to vote with your account." });
+    }
   }
 
   // Record Vote
@@ -1313,11 +1314,11 @@ app.get("/api/polls/:id/user_voted", (req, res) => {
   let votedMatch = null;
 
   if (userId) {
+    // Logged-in user: only check their user_id (not IP)
     votedMatch = DB.votes.find(v => v.poll_id === pollId && v.user_id === userId);
-  }
-
-  if (!votedMatch) {
-    votedMatch = DB.votes.find(v => v.poll_id === pollId && v.ip_hash === ip_hash);
+  } else {
+    // Anonymous user: check by IP
+    votedMatch = DB.votes.find(v => v.poll_id === pollId && v.ip_hash === ip_hash && !v.user_id);
   }
 
   if (votedMatch) {
