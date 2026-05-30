@@ -2371,8 +2371,13 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.use(express.static(distPath, { maxAge: "1d" }));
+    // SPA fallback: only for non-API, non-asset requests
+    app.get("*", (req, res, next) => {
+      // Don't intercept API routes or file requests with extensions
+      if (req.path.startsWith("/api/") || req.path.includes(".")) {
+        return next();
+      }
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
