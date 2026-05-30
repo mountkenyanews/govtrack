@@ -1,0 +1,6 @@
+{
+  "name": "GovTrack",
+  "description": "Real-time political polling, approvals, policy tracking and analytics platform",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

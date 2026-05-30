@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-blue: #0A1628;
+  --color-brand-gold: #F5A623;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+/* Custom scrollbar for visual refinement on inner panels only (avoiding global HTML scroll conflicts) */
+.scrollbar-custom::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-custom::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover,
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Skeleton animation */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Rich Text Article Display & Editor Layouts (MS Word Compatible) */
+.news-article-content, 
+.news-insights-textarea {
+  line-height: 1.75;
+}
+
+.news-article-content p,
+.news-insights-textarea p,
+.news-article-content div,
+.news-insights-textarea div {
+  margin-bottom: 1rem;
+}
+
+.news-article-content strong,
+.news-article-content b,
+.news-insights-textarea strong,
+.news-insights-textarea b {
+  font-weight: 800;
+  color: #0d172a !important;
+}
+
+.news-article-content em,
+.news-article-content i,
+.news-insights-textarea em,
+.news-insights-textarea i {
+  font-style: italic;
+}
+
+.news-article-content u,
+.news-insights-textarea u {
+  text-decoration: underline;
+}
+
+.news-article-content ul,
+.news-insights-textarea ul {
+  list-style-type: disc !important;
+  margin-left: 1.75rem !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.news-article-content ol,
+.news-insights-textarea ol {
+  list-style-type: decimal !important;
+  margin-left: 1.75rem !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.news-article-content li,
+.news-insights-textarea li {
+  margin-bottom: 0.35rem !important;
+  padding-left: 0.25rem !important;
+}
+
+.news-article-content h1, .news-insights-textarea h1,
+.news-article-content h2, .news-insights-textarea h2,
+.news-article-content h3, .news-insights-textarea h3 {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: #0a1628;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.news-article-content h1, .news-insights-textarea h1 { font-size: 1.5rem; }
+.news-article-content h2, .news-insights-textarea h2 { font-size: 1.25rem; }
+.news-article-content h3, .news-insights-textarea h3 { font-size: 1.125rem; }
+
+/* Custom placeholder for contenteditable */
+.news-insights-textarea:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-style: italic;
+  font-family: var(--font-sans);
+  pointer-events: none;
+  display: block; 
+}
+

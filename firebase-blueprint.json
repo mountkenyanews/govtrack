@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "display_name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "country": { "type": "string" },
+        "bio": { "type": "string" },
+        "avatar_url": { "type": "string" },
+        "verified": { "type": "boolean" },
+        "joined_at": { "type": "string" }
+      },
+      "required": ["uid", "display_name", "email", "role"]
+    },
+    "AppBackup": {
+      "title": "Application Database Backup",
+      "description": "A monolithic backup document representing the server's state.",
+      "type": "object",
+      "properties": {
+        "databaseData": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["databaseData", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/backups/{backupId}": {
+      "schema": "AppBackup",
+      "description": "Persistent backup documents that the server reads and writes to store the master DB state."
+    }
+  }
+}
