@@ -15,10 +15,6 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
-// The require trick for json files in ESM
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-
 let firebaseConfig: any = null;
 
 if (process.env.FIREBASE_CONFIG) {
@@ -40,12 +36,13 @@ if (!firebaseConfig && process.env.FIREBASE_PROJECT_ID) {
     messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
     firestoreDatabaseId: process.env.FIREBASE_FIRESTORE_DATABASE_ID || "(default)"
   };
-  console.log("[Firebase] Loaded config from individual individual environment variables.");
+  console.log("[Firebase] Loaded config from individual environment variables.");
 }
 
 if (!firebaseConfig) {
   try {
-    firebaseConfig = require("./firebase-applet-config.json");
+    const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+    firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     console.log("[Firebase] Loaded config from local firebase-applet-config.json file.");
   } catch (err) {
     console.warn("[Firebase] Local firebase-applet-config.json was not found. Please ensure FIREBASE_CONFIG is configured in your Railway environment variables.");
