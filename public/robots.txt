@@ -1,0 +1,10 @@
+# GovTrack Robots.txt
+# https://govtrack.co.ke
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+
+# Sitemap
+Sitemap: https://govtrack.co.ke/sitemap.xml

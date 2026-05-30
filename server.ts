@@ -59,6 +59,54 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: "20mb" }));
 
+// SEO: Dynamic sitemap.xml for Google indexing
+const SITE_URL = process.env.APP_URL || "https://govtrack.co.ke";
+app.get("/sitemap.xml", (req, res) => {
+  const staticPages = [
+    { loc: "/", priority: "1.0", changefreq: "daily" },
+    { loc: "/#/polls", priority: "0.9", changefreq: "daily" },
+    { loc: "/#/politicians", priority: "0.8", changefreq: "weekly" },
+    { loc: "/#/elections", priority: "0.8", changefreq: "weekly" },
+    { loc: "/#/policy", priority: "0.7", changefreq: "weekly" },
+    { loc: "/#/news", priority: "0.9", changefreq: "daily" },
+    { loc: "/#/results", priority: "0.7", changefreq: "daily" },
+    { loc: "/#/about", priority: "0.5", changefreq: "monthly" },
+    { loc: "/#/how-it-works", priority: "0.5", changefreq: "monthly" },
+    { loc: "/#/login", priority: "0.3", changefreq: "monthly" },
+    { loc: "/#/create", priority: "0.6", changefreq: "monthly" },
+  ];
+
+  // Dynamic pages from DB
+  const pollPages = (DB.polls || []).map(p => ({
+    loc: `/#/polls/${p.id}`,
+    priority: p.is_featured ? "0.9" : "0.7",
+    changefreq: p.status === "active" ? "daily" : "weekly",
+    lastmod: p.created_at ? p.created_at.split("T")[0] : undefined
+  }));
+
+  const politicianPages = (DB.politicians || []).map(p => ({
+    loc: `/#/politicians/${p.id}`,
+    priority: "0.7",
+    changefreq: "weekly"
+  }));
+
+  const allPages = [...staticPages, ...pollPages, ...politicianPages];
+  const today = new Date().toISOString().split("T")[0];
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${allPages.map(page => `  <url>
+    <loc>${SITE_URL}${page.loc}</loc>
+    <lastmod>${(page as any).lastmod || today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`).join("\n")}
+</urlset>`;
+
+  res.set("Content-Type", "application/xml");
+  res.send(xml);
+});
+
 // Resolve paths
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATABASE_FILE = path.join(DATA_DIR, "database.json");

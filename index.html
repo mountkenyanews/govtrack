@@ -3,11 +3,79 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+
+    <!-- Primary SEO Meta Tags -->
+    <title>GovTrack — Voice & Accountability | Political Polling Platform</title>
+    <meta name="description" content="GovTrack is a non-partisan political polling and accountability platform. Track politicians, vote on public opinion polls, analyze election trends, and follow policy developments across Kenya, USA, UK, and worldwide." />
+    <meta name="keywords" content="political polls, elections, voting, politicians, approval ratings, Kenya elections, government accountability, public opinion, policy tracking, GovTrack" />
+    <meta name="author" content="GovTrack" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://govtrack.co.ke/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://govtrack.co.ke/" />
+    <meta property="og:title" content="GovTrack — Voice & Accountability | Political Polling Platform" />
+    <meta property="og:description" content="Track politicians, vote on public opinion polls, analyze election trends, and follow policy developments. Non-partisan democratic engagement for citizens worldwide." />
+    <meta property="og:image" content="https://govtrack.co.ke/og-image.png" />
+    <meta property="og:site_name" content="GovTrack" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://govtrack.co.ke/" />
+    <meta name="twitter:title" content="GovTrack — Voice & Accountability" />
+    <meta name="twitter:description" content="Non-partisan political polling and accountability platform. Track leaders, vote on polls, analyze elections." />
+    <meta name="twitter:image" content="https://govtrack.co.ke/og-image.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#0A1628" />
+    <meta name="msapplication-TileColor" content="#0A1628" />
+
+    <!-- Google Fonts Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "GovTrack",
+      "alternateName": "GovTrack Voice & Accountability",
+      "url": "https://govtrack.co.ke",
+      "description": "Non-partisan political polling and accountability platform for tracking politicians, public opinion polls, and election analysis.",
+      "applicationCategory": "GovernmentApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "GovTrack",
+        "url": "https://govtrack.co.ke"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://govtrack.co.ke/#/polls?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
   </head>
   <body>
+    <noscript>
+      <h1>GovTrack — Voice & Accountability</h1>
+      <p>GovTrack is a non-partisan political polling platform. Please enable JavaScript to use this application.</p>
+      <p>Features: Political polls, election tracking, politician profiles, approval ratings, news feed, and analytics.</p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
