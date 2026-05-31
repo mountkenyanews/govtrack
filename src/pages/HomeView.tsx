@@ -94,12 +94,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         {/* Editorial Background Image layer */}
         <div className="absolute inset-0 z-0 select-none">
           <img 
-            src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1600"
-            alt="African community casting ballots in consensus community style" 
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+            alt="Global electoral and representative assembly" 
             className="w-full h-full object-cover opacity-55 sm:opacity-70 md:opacity-75 transition-opacity duration-300 object-center md:object-right"
             referrerPolicy="no-referrer"
           />
-          {/* Responsive gradients: keeps left-aligned text legible while letting the beautiful African consensus image shine clearly on the right */}
+          {/* Responsive gradients: keeps left-aligned text legible while letting the beautiful assembly image shine clearly on the right */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628] via-[#0a1628]/90 md:via-[#0a1628]/65 to-[#0a1628]/40 md:to-transparent"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628] via-transparent to-transparent"></div>
         </div>

@@ -308,7 +308,7 @@ function seedInitialData() {
     {
       id: 1,
       full_name: "William Ruto",
-      photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/William_Ruto_in_2023.jpg/250px-William_Ruto_in_2023.jpg",
       title: "President",
       country: "Kenya",
       party: "United Democratic Alliance (UDA)",
@@ -326,7 +326,7 @@ function seedInitialData() {
     {
       id: 2,
       full_name: "Raila Odinga",
-      photo_url: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Raila_Amolo_Odinga_2009_%28cropped%29.jpg/250px-Raila_Amolo_Odinga_2009_%28cropped%29.jpg",
       title: "Former Prime Minister",
       country: "Kenya",
       party: "Orange Democratic Movement (ODM)",
@@ -344,7 +344,7 @@ function seedInitialData() {
     {
       id: 3,
       full_name: "Joe Biden",
-      photo_url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Joe_Biden_presidential_portrait.jpg/250px-Joe_Biden_presidential_portrait.jpg",
       title: "President",
       country: "USA",
       party: "Democratic Party",
@@ -362,7 +362,7 @@ function seedInitialData() {
     {
       id: 4,
       full_name: "Donald Trump",
-      photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Official_Presidential_Portrait_of_President_Donald_J._Trump_%282025%29_%28cropped%29%282%29.jpg/250px-Official_Presidential_Portrait_of_President_Donald_J._Trump_%282025%29_%28cropped%29%282%29.jpg",
       title: "President-elect",
       country: "USA",
       party: "Republican Party",
@@ -380,7 +380,7 @@ function seedInitialData() {
     {
       id: 5,
       full_name: "Sir Keir Starmer",
-      photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Official_portrait_of_Keir_Starmer.jpg/250px-Official_portrait_of_Keir_Starmer.jpg",
       title: "Prime Minister",
       country: "UK",
       party: "Labour Party",
@@ -398,7 +398,7 @@ function seedInitialData() {
     {
       id: 6,
       full_name: "Rishi Sunak",
-      photo_url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Official_portrait_of_Rishi_Sunak_%28cropped%29.jpg/250px-Official_portrait_of_Rishi_Sunak_%28cropped%29.jpg",
       title: "Former PM / MP",
       country: "UK",
       party: "Conservative Party",
@@ -416,7 +416,7 @@ function seedInitialData() {
     {
       id: 7,
       full_name: "Cyril Ramaphosa",
-      photo_url: "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Cyril_Ramaphosa_in_2026.jpg/250px-Cyril_Ramaphosa_in_2026.jpg",
       title: "President",
       country: "South Africa",
       party: "African National Congress (ANC)",
@@ -433,7 +433,7 @@ function seedInitialData() {
     {
       id: 8,
       full_name: "Julius Malema",
-      photo_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Julius_Malema_2019.jpg/250px-Julius_Malema_2019.jpg",
       title: "MP & Party President",
       country: "South Africa",
       party: "Economic Freedom Fighters (EFF)",
@@ -450,7 +450,7 @@ function seedInitialData() {
     {
       id: 9,
       full_name: "Emmanuel Macron",
-      photo_url: "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Emmanuel_Macron_2025_%28cropped%29.jpg/250px-Emmanuel_Macron_2025_%28cropped%29.jpg",
       title: "President",
       country: "France",
       party: "Renaissance",
@@ -468,7 +468,7 @@ function seedInitialData() {
     {
       id: 10,
       full_name: "Olaf Scholz",
-      photo_url: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&w=256&h=256&q=80",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Olaf_Scholz_2025_%28cropped%29.jpg/250px-Olaf_Scholz_2025_%28cropped%29.jpg",
       title: "Chancellor",
       country: "Germany",
       party: "Social Democratic Party (SPD)",
@@ -478,9 +478,10 @@ function seedInitialData() {
       date_of_birth: "1958-06-14",
       approval_rating: 29.0,
       total_poll_appearances: 2,
-      social_twitter: "Bundeskanzler",
+      social_twitter: "OlafScholz",
+      social_instagram: "olafscholz",
       is_active: true,
-      tags: ["Germany", "Europe", "SPD"]
+      tags: ["Germany", "Europe", "Executive"]
     }
   ];
 
@@ -496,9 +497,9 @@ function seedInitialData() {
       status: "active",
       poll_type: "single_choice",
       options: [
-        { id: 101, poll_id: 1, label: "William Ruto", description: "Incumbent President - UDA leadership", photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80", party: "United Democratic Alliance", party_color: "#32CD32", vote_count: 3624, order: 1 },
-        { id: 102, poll_id: 1, label: "Raila Odinga", description: "AUC Chair Representative - Opposition coalition", photo_url: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=256&h=256&q=80", party: "Orange Democratic Movement", party_color: "#F08080", vote_count: 4210, order: 2 },
-        { id: 103, poll_id: 1, label: "Kalonzo Musyoka", description: "Wiper Democratic Movement - Azimio principal", photo_url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&h=256&q=80", party: "Wiper Democratic Movement", party_color: "#0033A0", vote_count: 598, order: 3 }
+        { id: 101, poll_id: 1, label: "William Ruto", description: "Incumbent President - UDA leadership", photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/William_Ruto_in_2023.jpg/250px-William_Ruto_in_2023.jpg", party: "United Democratic Alliance", party_color: "#32CD32", vote_count: 3624, order: 1 },
+        { id: 102, poll_id: 1, label: "Raila Odinga", description: "AUC Chair Representative - Opposition coalition", photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Raila_Amolo_Odinga_2009_%28cropped%29.jpg/250px-Raila_Amolo_Odinga_2009_%28cropped%29.jpg", party: "Orange Democratic Movement", party_color: "#F08080", vote_count: 4210, order: 2 },
+        { id: 103, poll_id: 1, label: "Kalonzo Musyoka", description: "Wiper Democratic Movement - Azimio principal", photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Kalonzo_Musyoka.jpg/250px-Kalonzo_Musyoka.jpg", party: "Wiper Democratic Movement", party_color: "#0033A0", vote_count: 598, order: 3 }
       ],
       created_by: 2,
       created_at: "2026-05-10T12:00:00Z",
@@ -604,10 +605,10 @@ function seedInitialData() {
       status: "active",
       poll_type: "single_choice",
       options: [
-        { id: 601, poll_id: 6, label: "Cyril Ramaphosa", description: "G20 host representing South Africa strategy", photo_url: "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=256&h=256&q=80", party: "ANC Party", party_color: "#006600", vote_count: 5120, order: 1 },
-        { id: 602, poll_id: 6, label: "William Ruto", description: "Climate integration initiatives leader", photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80", party: "UDA Party", party_color: "#32CD32", vote_count: 4890, order: 2 },
-        { id: 603, poll_id: 6, label: "Bola Tinubu", description: "Infrastructure program sponsor in Nigeria", photo_url: "https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=256&h=256&q=80", party: "APC Party", party_color: "#10B981", vote_count: 3218, order: 3 },
-        { id: 604, poll_id: 6, label: "Samia Suluhu Hassan", description: "Trade pact expansion sponsor in Tanzania", photo_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&h=256&q=80", party: "CCM Party", party_color: "#FF8C00", vote_count: 2450, order: 4 }
+        { id: 601, poll_id: 6, label: "Cyril Ramaphosa", description: "G20 host representing South Africa strategy", photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Cyril_Ramaphosa_in_2026.jpg/250px-Cyril_Ramaphosa_in_2026.jpg", party: "ANC Party", party_color: "#006600", vote_count: 5120, order: 1 },
+        { id: 602, poll_id: 6, label: "William Ruto", description: "Climate integration initiatives leader", photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/William_Ruto_in_2023.jpg/250px-William_Ruto_in_2023.jpg", party: "UDA Party", party_color: "#32CD32", vote_count: 4890, order: 2 },
+        { id: 603, poll_id: 6, label: "Bola Tinubu", description: "Infrastructure program sponsor in Nigeria", photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Bola_Tinubu_in_2023.jpg/250px-Bola_Tinubu_in_2023.jpg", party: "APC Party", party_color: "#10B981", vote_count: 3218, order: 3 },
+        { id: 604, poll_id: 6, label: "Samia Suluhu Hassan", description: "Trade pact expansion sponsor in Tanzania", photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Samia_Suluhu_Hassan_in_2021.jpg/250px-Samia_Suluhu_Hassan_in_2021.jpg", party: "CCM Party", party_color: "#FF8C00", vote_count: 2450, order: 4 }
       ],
       created_by: 3,
       created_at: "2026-05-05T15:20:00Z",
@@ -690,7 +691,7 @@ function seedInitialData() {
       id: 1,
       title: "Voters Express Deep Concerns Over Cost of Living Index",
       summary: "In a sweeping new survey, voters signal that food inflation, local taxes, and diesel pricing adjustments remain their absolute number one priority ahead of the fiscal planning sessions.",
-      image_url: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=600&q=80",
+      image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Price_tags_in_a_shop.JPEG/300px-Price_tags_in_a_shop.JPEG",
       source_url: "https://www.politico.com",
       source_name: "Politico Insight",
       published_at: "2026-05-25T14:30:22Z",
@@ -702,7 +703,7 @@ function seedInitialData() {
       id: 2,
       title: "Rival Parties Convene National Panels on Public NHS Funding Standards",
       summary: "The Prime Minister meets legislative delegates to compromise on staffing ratios, hospital equipment upgrades, and nurse recruitment strategies that became critical debate points.",
-      image_url: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80",
+      image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/NHS_health_checks_wellbeing_service.jpg/300px-NHS_health_checks_wellbeing_service.jpg",
       source_url: "https://www.bbc.com/news",
       source_name: "BBC News",
       published_at: "2026-05-24T09:12:00Z",
@@ -714,7 +715,7 @@ function seedInitialData() {
       id: 3,
       title: "Kenya Presidential Contenders Unveil Competitive Policy Declarations",
       summary: "Leading delegates present economic pillars focusing on local manufacturing, youth startup credits, and environmental pacts as ODM and UDA increase voter outreach tours.",
-      image_url: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+      image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/ODM_rally_at_Kibera.jpg/300px-ODM_rally_at_Kibera.jpg",
       source_url: "https://www.standardmedia.co.ke",
       source_name: "The Standard",
       published_at: "2026-05-23T11:00:00Z",
@@ -726,7 +727,7 @@ function seedInitialData() {
       id: 4,
       title: "Draft Bill Proposes Shifting National Referendum Age Requirements",
       summary: "Constitutional reform organizations table an official memo arguing teenagers contribute significantly to workforce taxes and deserve representative influence in municipal development rules.",
-      image_url: "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&w=600&q=80",
+      image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Secret_ballot_box.jpg/300px-Secret_ballot_box.jpg",
       source_url: "https://www.reuters.com",
       source_name: "Reuters",
       published_at: "2026-05-21T07:45:00Z",
@@ -738,7 +739,7 @@ function seedInitialData() {
       id: 5,
       title: "Presidential Term Assessments Focus heavily on International Trade Balance Strategy",
       summary: "Analysts evaluate local manufacturing output increases and foreign tariff adjustments implemented by the administration to evaluate if first-quarter milestones were met.",
-      image_url: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=80",
+      image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Official_Portrait_of_President_Biden.jpg/300px-Official_Portrait_of_President_Biden.jpg",
       source_url: "https://www.fivethirtyeight.com",
       source_name: "FiveThirtyEight Analytics",
       published_at: "2026-05-19T18:00:00Z",
@@ -750,7 +751,7 @@ function seedInitialData() {
       id: 6,
       title: "AfCFTA Progress Receives Substantial Regional Backing During Peak Summit",
       summary: "Heads of state conclude agreements lowering tariffs on processed goods, seeking to double intra-continental cargo movements by end of 2028 with unified customs databases.",
-      image_url: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80",
+      image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/AfCFTA_secretariat_building.jpg/300px-AfCFTA_secretariat_building.jpg",
       source_url: "https://www.aljazeera.com",
       source_name: "Al Jazeera",
       published_at: "2026-05-18T16:20:00Z",
@@ -835,6 +836,113 @@ function syncPollOptionsPhotos() {
       });
     }
   });
+}
+
+function sanitizeLoadedDatabase() {
+  if (!DB) return;
+  const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
+  let changed = false;
+
+  const politicianPhotoMap: { [key: string]: string } = {
+    "william ruto": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/William_Ruto_in_2023.jpg/250px-William_Ruto_in_2023.jpg",
+    "raila odinga": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Raila_Amolo_Odinga_2009_%28cropped%29.jpg/250px-Raila_Amolo_Odinga_2009_%28cropped%29.jpg",
+    "joe biden": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Joe_Biden_presidential_portrait.jpg/250px-Joe_Biden_presidential_portrait.jpg",
+    "donald trump": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Official_Presidential_Portrait_of_President_Donald_J._Trump_%282025%29_%28cropped%29%282%29.jpg/250px-Official_Presidential_Portrait_of_President_Donald_J._Trump_%282025%29_%28cropped%29%282%29.jpg",
+    "sir keir starmer": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Official_portrait_of_Keir_Starmer.jpg/250px-Official_portrait_of_Keir_Starmer.jpg",
+    "keir starmer": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Official_portrait_of_Keir_Starmer.jpg/250px-Official_portrait_of_Keir_Starmer.jpg",
+    "rishi sunak": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Official_portrait_of_Rishi_Sunak_%28cropped%29.jpg/250px-Official_portrait_of_Rishi_Sunak_%28cropped%29.jpg",
+    "cyril ramaphosa": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Cyril_Ramaphosa_in_2026.jpg/250px-Cyril_Ramaphosa_in_2026.jpg",
+    "julius malema": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Julius_Malema_2019.jpg/250px-Julius_Malema_2019.jpg",
+    "emmanuel macron": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Emmanuel_Macron_2025_%28cropped%29.jpg/250px-Emmanuel_Macron_2025_%28cropped%29.jpg",
+    "olaf scholz": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Olaf_Scholz_2025_%28cropped%29.jpg/250px-Olaf_Scholz_2025_%28cropped%29.jpg",
+    "kalonzo musyoka": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Kalonzo_Musyoka.jpg/250px-Kalonzo_Musyoka.jpg",
+    "bola tinubu": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Bola_Tinubu_in_2023.jpg/250px-Bola_Tinubu_in_2023.jpg",
+    "samia suluhu hassan": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Samia_Suluhu_Hassan_in_2021.jpg/250px-Samia_Suluhu_Hassan_in_2021.jpg"
+  };
+
+  // 1. Sanitize politicians
+  if (DB.politicians && Array.isArray(DB.politicians)) {
+    DB.politicians.forEach(pol => {
+      if (STOCK_UNSPLASH_PATTERN.test(pol.photo_url || "")) {
+        const lowerName = pol.full_name.toLowerCase().trim();
+        let matched = false;
+        for (const [key, value] of Object.entries(politicianPhotoMap)) {
+          if (lowerName === key || lowerName.includes(key) || key.includes(lowerName)) {
+            pol.photo_url = value;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          pol.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(pol.full_name)}&background=0A1628&color=ffffff&size=256&bold=true`;
+        }
+        console.log(`[DB Sanitize] Purged politician Unsplash photo: "${pol.full_name}" -> ${pol.photo_url}`);
+        changed = true;
+      }
+    });
+  }
+
+  // 2. Sanitize polls options
+  if (DB.polls && Array.isArray(DB.polls)) {
+    DB.polls.forEach(poll => {
+      if (poll.options && Array.isArray(poll.options)) {
+        poll.options.forEach(opt => {
+          if (STOCK_UNSPLASH_PATTERN.test(opt.photo_url || "")) {
+            const lowerLabel = opt.label.toLowerCase().trim();
+            let matched = false;
+            for (const [key, value] of Object.entries(politicianPhotoMap)) {
+              if (lowerLabel === key || lowerLabel.includes(key) || key.includes(lowerLabel)) {
+                opt.photo_url = value;
+                matched = true;
+                break;
+              }
+            }
+            if (!matched) {
+              const foundPol = DB.politicians?.find(p => p.full_name.toLowerCase().includes(lowerLabel) || lowerLabel.includes(p.full_name.toLowerCase()));
+              if (foundPol && foundPol.photo_url && !STOCK_UNSPLASH_PATTERN.test(foundPol.photo_url)) {
+                opt.photo_url = foundPol.photo_url;
+              } else {
+                opt.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(opt.label)}&background=0A1628&color=ffffff&size=256&bold=true`;
+              }
+            }
+            console.log(`[DB Sanitize] Purged poll option Unsplash photo: "${opt.label}" -> ${opt.photo_url}`);
+            changed = true;
+          }
+        });
+      }
+    });
+  }
+
+  // 3. Sanitize news items
+  if (DB.newsItems && Array.isArray(DB.newsItems)) {
+    DB.newsItems.forEach(news => {
+      if (STOCK_UNSPLASH_PATTERN.test(news.image_url || "")) {
+        const titleLower = news.title.toLowerCase();
+        let selectedUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Secret_ballot_box.jpg/300px-Secret_ballot_box.jpg";
+        
+        if (titleLower.includes("cost of living") || titleLower.includes("inflation") || titleLower.includes("price") || titleLower.includes("tax")) {
+          selectedUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Price_tags_in_a_shop.JPEG/300px-Price_tags_in_a_shop.JPEG";
+        } else if (titleLower.includes("nhs") || titleLower.includes("health") || titleLower.includes("doctor") || titleLower.includes("nurse")) {
+          selectedUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/NHS_health_checks_wellbeing_service.jpg/300px-NHS_health_checks_wellbeing_service.jpg";
+        } else if (titleLower.includes("kenya") || titleLower.includes("rally") || titleLower.includes("odm") || titleLower.includes("uda")) {
+          selectedUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/ODM_rally_at_Kibera.jpg/300px-ODM_rally_at_Kibera.jpg";
+        } else if (titleLower.includes("trade") || titleLower.includes("afcfta") || titleLower.includes("summit") || titleLower.includes("africa")) {
+          selectedUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/AfCFTA_secretariat_building.jpg/300px-AfCFTA_secretariat_building.jpg";
+        } else if (titleLower.includes("biden") || titleLower.includes("trump") || titleLower.includes("presidential term") || titleLower.includes("usa")) {
+          selectedUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Official_Portrait_of_President_Biden.jpg/300px-Official_Portrait_of_President_Biden.jpg";
+        }
+        
+        news.image_url = selectedUrl;
+        console.log(`[DB Sanitize] Purged news item Unsplash image: "${news.title}" -> ${news.image_url}`);
+        changed = true;
+      }
+    });
+  }
+
+  if (changed) {
+    console.log("[DB Sanitize] Unsplash assets purged from active database. Persisting sanitization...");
+    saveDatabase();
+  }
 }
 
 function ensurePartyExists(partyName: string, partyColor: string, country: string) {
@@ -942,6 +1050,7 @@ async function loadDatabase() {
         }
 
         syncPollOptionsPhotos();
+        sanitizeLoadedDatabase();
         console.log(`[DB] Loaded from Firestore: ${DB.polls.length} polls, ${DB.politicians.length} politicians, ${DB.newsItems.length} news items.`);
         return;
       }
@@ -2762,7 +2871,7 @@ app.post("/api/admin/news", async (req, res) => {
     id: nextId,
     title,
     summary,
-    image_url: image_url || "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&w=600&q=80",
+    image_url: image_url || "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Secret_ballot_box.jpg/300px-Secret_ballot_box.jpg",
     source_url: source_url || "https://www.politico.com",
     source_name: source_name || "GovTrack Feed",
     published_at: new Date().toISOString(),

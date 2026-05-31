@@ -914,7 +914,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     setNewsForm({
       title: "",
       summary: "",
-      image_url: "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&w=600&q=80",
+      image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Secret_ballot_box.jpg/300px-Secret_ballot_box.jpg",
       source_url: "https://www.reuters.com",
       source_name: "Reuters",
       country: "Kenya",
@@ -2350,7 +2350,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         type="url"
                         value={newsForm.image_url}
                         onChange={e => setNewsForm({...newsForm, image_url: e.target.value})}
-                        placeholder="https://images.unsplash.com/photo-..."
+                        placeholder="https://upload.wikimedia.org/wikipedia/commons/..."
                         className="w-full p-2.5 border border-slate-300 rounded bg-white focus:outline-brand-blue font-mono text-[11px]"
                       />
                     </div>
