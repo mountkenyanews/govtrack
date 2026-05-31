@@ -1031,7 +1031,7 @@ app.use(async (req, res, next) => {
 // ---------------------- API ROUTES ----------------------
 
 // 1. AUTH API
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const { display_name, email, password, country, role, bio } = req.body;
   if (!display_name || !email || !password) {
     return res.status(400).json({ error: "Display name, email and password are required." });
@@ -1042,8 +1042,9 @@ app.post("/api/auth/register", (req, res) => {
     return res.status(409).json({ error: "A user with this email already exists." });
   }
 
+  const nextId = DB.users.reduce((max, u) => u.id > max ? u.id : max, 0) + 1;
   const newUser: User = {
-    id: DB.users.length + 1,
+    id: nextId,
     display_name,
     email,
     role: (role || "citizen") as User["role"],
@@ -1058,7 +1059,7 @@ app.post("/api/auth/register", (req, res) => {
 
   DB.users.push(newUser);
   DB.credentials[email.toLowerCase()] = password;
-  saveDatabase();
+  await saveDatabase();
 
   res.status(201).json({ user: newUser, token: `mock-token-usr-${newUser.id}` });
 });
@@ -1124,7 +1125,7 @@ app.get("/api/notifications", (req, res) => {
   res.json({ notifications: userNotifs });
 });
 
-app.post("/api/notifications/:id/read", (req, res) => {
+app.post("/api/notifications/:id/read", async (req, res) => {
   const user = getAuthUser(req);
   if (!user) {
     return res.status(401).json({ error: "Unauthorized access. No valid session token." });
@@ -1134,13 +1135,13 @@ app.post("/api/notifications/:id/read", (req, res) => {
   const index = (DB.notifications || []).findIndex(n => n.id === notifId && n.user_id === user.id);
   if (index !== -1) {
     DB.notifications[index].is_read = true;
-    saveDatabase();
+    await saveDatabase();
   }
   
   res.json({ success: true });
 });
 
-app.post("/api/notifications/mark-all-read", (req, res) => {
+app.post("/api/notifications/mark-all-read", async (req, res) => {
   const user = getAuthUser(req);
   if (!user) {
     return res.status(401).json({ error: "Unauthorized access. No valid session token." });
@@ -1157,7 +1158,7 @@ app.post("/api/notifications/mark-all-read", (req, res) => {
   }
   
   if (changed) {
-    saveDatabase();
+    await saveDatabase();
   }
   
   res.json({ success: true });
@@ -1185,7 +1186,7 @@ app.get("/api/users/:id/votes", (req, res) => {
   res.json(history);
 });
 
-app.put("/api/auth/profile", (req, res) => {
+app.put("/api/auth/profile", async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized." });
@@ -1207,7 +1208,7 @@ app.put("/api/auth/profile", (req, res) => {
     DB.users[userIndex].role = role as User["role"];
   }
 
-  saveDatabase();
+  await saveDatabase();
   res.json({ user: DB.users[userIndex] });
 });
 
@@ -1381,7 +1382,7 @@ app.get("/api/polls/:id/device-metrics", (req, res) => {
 });
 
 // 3. VOTING ACTIONS WITH DUPLICATE PREVENTION
-app.post("/api/polls/:id/vote", (req, res) => {
+app.post("/api/polls/:id/vote", async (req, res) => {
   const pollId = parseInt(req.params.id);
   const { option_ids, user_id, device_type } = req.body;
   const ip = req.ip || req.headers["x-forwarding-for"] || "127.0.0.1";
@@ -1405,7 +1406,7 @@ app.post("/api/polls/:id/vote", (req, res) => {
 
   if (poll.closes_at && new Date(poll.closes_at).getTime() < Date.now()) {
     poll.status = "closed";
-    saveDatabase();
+    await saveDatabase();
     return res.status(400).json({ error: "This poll's voting window has expired." });
   }
 
@@ -1426,8 +1427,9 @@ app.post("/api/polls/:id/vote", (req, res) => {
   }
 
   // Record Vote
+  const nextVoteId = DB.votes.reduce((max, v) => v.id > max ? v.id : max, 0) + 1;
   const newVote: Vote = {
-    id: DB.votes.length + 1,
+    id: nextVoteId,
     poll_id: pollId,
     option_ids,
     user_id: user_id || null,
@@ -1451,8 +1453,9 @@ app.post("/api/polls/:id/vote", (req, res) => {
   // Milestone triggers
   const milestones = [5, 10, 25, 50, 100, 250, 500, 1000, 5000, 10000];
   if (poll.created_by && milestones.includes(poll.total_votes)) {
+    const nextNotifId = (DB.notifications || []).reduce((max, n) => n.id > max ? n.id : max, 0) + 1;
     const newNotif: AppNotification = {
-      id: DB.notifications ? DB.notifications.length + 1 : 1,
+      id: nextNotifId,
       user_id: poll.created_by,
       poll_id: pollId,
       poll_title: poll.title,
@@ -1481,7 +1484,7 @@ app.post("/api/polls/:id/vote", (req, res) => {
   // Recalculate Politician ratings dynamically from updated poll states
   recalculatePoliticianRatings();
 
-  saveDatabase();
+  await saveDatabase();
 
   res.status(200).json({ success: true, poll });
 });
@@ -1547,7 +1550,7 @@ app.get("/api/polls/:id/comments", (req, res) => {
   res.json(list);
 });
 
-app.post("/api/polls/:id/comments", (req, res) => {
+app.post("/api/polls/:id/comments", async (req, res) => {
   const pollId = parseInt(req.params.id);
   const { user_id, content, parent_id } = req.body;
 
@@ -1560,8 +1563,9 @@ app.post("/api/polls/:id/comments", (req, res) => {
     return res.status(401).json({ error: "You must be logged in to participate in discussion threads." });
   }
 
+  const nextCommentId = DB.comments.reduce((max, c) => c.id > max ? c.id : max, 0) + 1;
   const newComment: Comment = {
-    id: DB.comments.length + 1,
+    id: nextCommentId,
     poll_id: pollId,
     user_id: user.id,
     user_name: user.display_name,
@@ -1578,8 +1582,9 @@ app.post("/api/polls/:id/comments", (req, res) => {
 
   const poll = DB.polls.find(p => p.id === pollId);
   if (poll && poll.created_by && poll.created_by !== user.id) {
+    const nextNotifId = (DB.notifications || []).reduce((max, n) => n.id > max ? n.id : max, 0) + 1;
     const newNotif: AppNotification = {
-      id: DB.notifications ? DB.notifications.length + 1 : 1,
+      id: nextNotifId,
       user_id: poll.created_by,
       poll_id: pollId,
       poll_title: poll.title,
@@ -1598,19 +1603,19 @@ app.post("/api/polls/:id/comments", (req, res) => {
     DB.notifications.push(newNotif);
   }
 
-  saveDatabase();
+  await saveDatabase();
 
   res.status(201).json(newComment);
 });
 
-app.post("/api/comments/:commentId/like", (req, res) => {
+app.post("/api/comments/:commentId/like", async (req, res) => {
   const commentId = parseInt(req.params.commentId);
   const commentIndex = DB.comments.findIndex(c => c.id === commentId);
   if (commentIndex === -1) {
     return res.status(404).json({ error: "Comment not found." });
   }
   DB.comments[commentIndex].likes += 1;
-  saveDatabase();
+  await saveDatabase();
   res.json(DB.comments[commentIndex]);
 });
 
@@ -1718,7 +1723,7 @@ app.get("/api/politicians/:id/developments", (req, res) => {
   res.json(devs);
 });
 
-app.post("/api/politicians/:id/developments/suggest", (req, res) => {
+app.post("/api/politicians/:id/developments/suggest", async (req, res) => {
   const politicianId = parseInt(req.params.id, 10);
   const { title, description, timeline, date, email } = req.body;
   if (!title || !description || !timeline) {
@@ -1726,8 +1731,9 @@ app.post("/api/politicians/:id/developments/suggest", (req, res) => {
   }
 
   if (!DB.developments) DB.developments = [];
+  const nextId = DB.developments.length > 0 ? Math.max(...DB.developments.map(d => d.id)) + 1 : 1;
   const newDev: DevelopmentProgress = {
-    id: DB.developments.length > 0 ? Math.max(...DB.developments.map(d => d.id)) + 1 : 1,
+    id: nextId,
     politician_id: politicianId,
     title,
     description,
@@ -1739,30 +1745,30 @@ app.post("/api/politicians/:id/developments/suggest", (req, res) => {
   };
 
   DB.developments.push(newDev);
-  saveDatabase().catch(console.error);
+  await saveDatabase();
   res.json({ success: true, development: newDev });
 });
 
-app.put("/api/admin/developments/:id/approve", (req, res) => {
+app.put("/api/admin/developments/:id/approve", async (req, res) => {
   const devId = parseInt(req.params.id, 10);
   if (!DB.developments) DB.developments = [];
   const dev = DB.developments.find(d => d.id === devId);
   if (!dev) return res.status(404).json({ error: "Not found" });
   
   dev.is_approved = true;
-  saveDatabase().catch(console.error);
+  await saveDatabase();
   res.json({ success: true, development: dev });
 });
 
-app.delete("/api/admin/developments/:id", (req, res) => {
+app.delete("/api/admin/developments/:id", async (req, res) => {
   const devId = parseInt(req.params.id, 10);
   if (!DB.developments) DB.developments = [];
   DB.developments = DB.developments.filter(d => d.id !== devId);
-  saveDatabase().catch(console.error);
+  await saveDatabase();
   res.json({ success: true });
 });
 
-app.put("/api/admin/developments/:id", (req, res) => {
+app.put("/api/admin/developments/:id", async (req, res) => {
   const devId = parseInt(req.params.id, 10);
   const { title, description, timeline, date } = req.body;
   
@@ -1775,7 +1781,7 @@ app.put("/api/admin/developments/:id", (req, res) => {
   if (timeline) dev.timeline = timeline;
   if (date !== undefined) dev.date = date;
   
-  saveDatabase().catch(console.error);
+  await saveDatabase();
   res.json({ success: true, development: dev });
 });
 
@@ -1859,7 +1865,7 @@ Ensure the description is comprehensive, balanced, and includes these nuances.`;
   }
 });
 
-app.post("/api/admin/politicians/:id/developments/bulk", (req, res) => {
+app.post("/api/admin/politicians/:id/developments/bulk", async (req, res) => {
   const politicianId = parseInt(req.params.id, 10);
   const { developments } = req.body;
   if (!Array.isArray(developments)) return res.status(400).json({ error: "Invalid payload" });
@@ -1868,8 +1874,9 @@ app.post("/api/admin/politicians/:id/developments/bulk", (req, res) => {
   const addedItems: DevelopmentProgress[] = [];
 
   for (const item of developments) {
+    const nextId = DB.developments.length > 0 ? Math.max(...DB.developments.map(d => d.id)) + 1 : 1;
     const newDev: DevelopmentProgress = {
-      id: DB.developments.length > 0 ? Math.max(...DB.developments.map(d => d.id)) + 1 : 1,
+      id: nextId,
       politician_id: politicianId,
       title: item.title,
       description: item.description,
@@ -1882,11 +1889,11 @@ app.post("/api/admin/politicians/:id/developments/bulk", (req, res) => {
     addedItems.push(newDev);
   }
 
-  saveDatabase().catch(console.error);
+  await saveDatabase();
   res.json({ success: true, added: addedItems });
 });
 
-app.post("/api/admin/politicians/:id/developments", (req, res) => {
+app.post("/api/admin/politicians/:id/developments", async (req, res) => {
   const politicianId = parseInt(req.params.id, 10);
   const { title, description, timeline, date } = req.body;
   if (!title || !description || !timeline) {
@@ -1894,8 +1901,9 @@ app.post("/api/admin/politicians/:id/developments", (req, res) => {
   }
 
   if (!DB.developments) DB.developments = [];
+  const nextId = DB.developments.length > 0 ? Math.max(...DB.developments.map(d => d.id)) + 1 : 1;
   const newDev: DevelopmentProgress = {
-    id: DB.developments.length > 0 ? Math.max(...DB.developments.map(d => d.id)) + 1 : 1,
+    id: nextId,
     politician_id: politicianId,
     title,
     description,
@@ -1906,7 +1914,7 @@ app.post("/api/admin/politicians/:id/developments", (req, res) => {
   };
 
   DB.developments.push(newDev);
-  saveDatabase().catch(console.error);
+  await saveDatabase();
   res.json({ success: true, development: newDev });
 });
 
@@ -1930,7 +1938,7 @@ app.get("/api/news", (req, res) => {
 });
 
 // 8. WIZARD POLL CREATION
-app.post("/api/polls/create", (req, res) => {
+app.post("/api/polls/create", async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "You must be logged in to construct a political poll." });
@@ -1949,7 +1957,7 @@ app.post("/api/polls/create", (req, res) => {
     return res.status(400).json({ error: "Title, category, poll type, and minimum 2 options are required." });
   }
 
-  const pollId = DB.polls.length + 1;
+  const pollId = DB.polls.reduce((max, p) => p.id > max ? p.id : max, 0) + 1;
 
   const pollOptions: PollOption[] = options.map((opt: any, index: number) => {
     return {
@@ -1994,7 +2002,7 @@ app.post("/api/polls/create", (req, res) => {
     DB.users[userIndex].polls_created += 1;
   }
 
-  saveDatabase();
+  await saveDatabase();
 
   res.status(201).json({ poll: newPoll });
 });
@@ -2055,7 +2063,7 @@ app.get("/api/admin/stats", (req, res) => {
   });
 });
 
-app.post("/api/admin/polls/:id/feature", (req, res) => {
+app.post("/api/admin/polls/:id/feature", async (req, res) => {
   const id = parseInt(req.params.id);
   DB.polls.forEach(p => {
     if (p.id === id) {
@@ -2064,23 +2072,23 @@ app.post("/api/admin/polls/:id/feature", (req, res) => {
       p.is_featured = false; // single featured poll rule
     }
   });
-  saveDatabase();
+  await saveDatabase();
   res.json({ success: true, polls: DB.polls });
 });
 
-app.post("/api/admin/polls/:id/status", (req, res) => {
+app.post("/api/admin/polls/:id/status", async (req, res) => {
   const id = parseInt(req.params.id);
   const { status } = req.body;
   const poll = DB.polls.find(p => p.id === id);
   if (poll) {
     poll.status = status;
-    saveDatabase();
+    await saveDatabase();
     return res.json({ success: true, poll });
   }
   res.status(404).json({ error: "Poll not found" });
 });
 
-app.delete("/api/admin/polls/:id", (req, res) => {
+app.delete("/api/admin/polls/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const initialCount = DB.polls.length;
@@ -2090,21 +2098,22 @@ app.delete("/api/admin/polls/:id", (req, res) => {
       return res.status(404).json({ error: "Poll not found or already deleted." });
     }
     
-    saveDatabase();
+    await saveDatabase();
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to delete poll: " + err.message });
   }
 });
 
-app.post("/api/admin/politicians", (req, res) => {
+app.post("/api/admin/politicians", async (req, res) => {
   const { full_name, title, country, party, party_color, office, bio, date_of_birth, photo_url } = req.body;
   if (!full_name || !photo_url) {
     return res.status(400).json({ error: "Name and profile photo are required." });
   }
 
+  const nextId = DB.politicians.reduce((max, p) => p.id > max ? p.id : max, 0) + 1;
   const newPol: Politician = {
-    id: DB.politicians.length + 1,
+    id: nextId,
     full_name,
     photo_url,
     title,
@@ -2124,11 +2133,11 @@ app.post("/api/admin/politicians", (req, res) => {
   if (newPol.party) {
     ensurePartyExists(newPol.party, newPol.party_color || "#3b82f6", newPol.country || "Global");
   }
-  saveDatabase();
+  await saveDatabase();
   res.status(201).json(newPol);
 });
 
-app.put("/api/admin/politicians/:id", (req, res) => {
+app.put("/api/admin/politicians/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   const polIndex = DB.politicians.findIndex(p => p.id === id);
   if (polIndex === -1) {
@@ -2156,18 +2165,18 @@ app.put("/api/admin/politicians/:id", (req, res) => {
     ensurePartyExists(updatedPol.party, updatedPol.party_color || "#3b82f6", updatedPol.country || "Global");
   }
 
-  saveDatabase();
+  await saveDatabase();
   res.json(DB.politicians[polIndex]);
 });
 
-app.delete("/api/admin/politicians/:id", (req, res) => {
+app.delete("/api/admin/politicians/:id", async (req, res) => {
   const user = getAuthUser(req);
   if (!user || user.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Only admins can delete profiles." });
   }
   const id = parseInt(req.params.id);
   DB.politicians = DB.politicians.filter(p => p.id !== id);
-  saveDatabase();
+  await saveDatabase();
   res.json({ success: true });
 });
 
@@ -2380,7 +2389,7 @@ app.post("/api/admin/politician/autofill", async (req, res) => {
   }
 });
 
-app.post("/api/admin/politicians/bulk", (req, res) => {
+app.post("/api/admin/politicians/bulk", async (req, res) => {
   const { politicians } = req.body;
   if (!Array.isArray(politicians)) {
     return res.status(400).json({ error: "Politicians array is required" });
@@ -2421,7 +2430,7 @@ app.post("/api/admin/politicians/bulk", (req, res) => {
   }
 
   if (created.length > 0) {
-    saveDatabase();
+    await saveDatabase();
   }
 
   res.status(201).json({ success: true, count: created.length, created });
@@ -2497,7 +2506,7 @@ app.post("/api/admin/poll/autofill", async (req, res) => {
   }
 });
 
-app.put("/api/admin/polls/:id", (req, res) => {
+app.put("/api/admin/polls/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   const poll = DB.polls.find(p => p.id === id);
   if (!poll) {
@@ -2539,11 +2548,11 @@ app.put("/api/admin/polls/:id", (req, res) => {
     poll.total_votes = poll.options.reduce((sum, o) => sum + o.vote_count, 0);
   }
 
-  saveDatabase();
+  await saveDatabase();
   res.json(poll);
 });
 
-app.put("/api/admin/news/:id", (req, res) => {
+app.put("/api/admin/news/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   const newsIndex = DB.newsItems.findIndex(n => n.id === id);
   if (newsIndex === -1) {
@@ -2563,14 +2572,14 @@ app.put("/api/admin/news/:id", (req, res) => {
     DB.newsItems[newsIndex].tags = Array.isArray(tags) ? tags : (tags as string).split(",").map(t => t.trim()).filter(Boolean);
   }
 
-  saveDatabase();
+  await saveDatabase();
   res.json(DB.newsItems[newsIndex]);
 });
 
-app.delete("/api/admin/news/:id", (req, res) => {
+app.delete("/api/admin/news/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   DB.newsItems = DB.newsItems.filter(n => n.id !== id);
-  saveDatabase();
+  await saveDatabase();
   res.json({ success: true });
 });
 
@@ -2586,21 +2595,22 @@ app.get("/api/admin/comments", (req, res) => {
   res.json(mappedComments);
 });
 
-app.delete("/api/admin/comments/:id", (req, res) => {
+app.delete("/api/admin/comments/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   DB.comments = DB.comments.filter(c => c.id !== id);
-  saveDatabase();
+  await saveDatabase();
   res.json({ success: true });
 });
 
-app.post("/api/admin/news", (req, res) => {
+app.post("/api/admin/news", async (req, res) => {
   const { title, summary, image_url, source_url, source_name, related_poll_id, country, tags } = req.body;
   if (!title || !summary) {
     return res.status(400).json({ error: "Title and summary are required." });
   }
 
+  const nextId = DB.newsItems.reduce((max, n) => n.id > max ? n.id : max, 0) + 1;
   const newNews: NewsItem = {
-    id: DB.newsItems.length + 1,
+    id: nextId,
     title,
     summary,
     image_url: image_url || "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&w=600&q=80",
@@ -2613,7 +2623,7 @@ app.post("/api/admin/news", (req, res) => {
   };
 
   DB.newsItems.push(newNews);
-  saveDatabase();
+  await saveDatabase();
   res.status(201).json(newNews);
 });
 
