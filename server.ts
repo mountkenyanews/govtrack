@@ -933,8 +933,6 @@ async function loadDatabase() {
         if (!DB.parties) {
           DB.parties = [];
         }
-        // Force-rebuild parties array to heal any pre-existing incorrect or mismatched country entries
-        DB.parties = [];
         if (DB.politicians && Array.isArray(DB.politicians)) {
           const PLACEHOLDER_PATTERN = /unsplash\.com\/photo-|ui-avatars\.com/;
           const healPromises: Promise<void>[] = [];
@@ -1036,11 +1034,18 @@ function getDatabaseLoadedPromise(): Promise<void> {
   return databaseLoadedPromise;
 }
 
-// Middleware to ensure database is loaded before processing API requests
+// Middleware to ensure database is loaded and caching is disabled before processing API requests
 app.use(async (req, res, next) => {
   if (!req.path.startsWith("/api/")) {
     return next();
   }
+
+  // Force disable browser, CDN and proxy caching for all API requests to ensure fresh data
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+
   try {
     // In Vercel serverless environment, we bypass the cache and load fresh from Firestore
     // on every API request to guarantee we never serve stale cached data from previously-warmed function instances.

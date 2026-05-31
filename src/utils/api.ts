@@ -41,6 +41,9 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const token = getSavedToken();
   const headers = {
     "Content-Type": "application/json",
+    "Pragma": "no-cache",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Expires": "0",
     ...(token ? { "Authorization": `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   } as HeadersInit;
