@@ -59,6 +59,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const [comments, setComments] = useState<any[]>([]);
   const [logs, setLogs] = useState<AdminLogs[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   
   const [pendingDevelopments, setPendingDevelopments] = useState<any[]>([]);
   const [isGeneratingDevs, setIsGeneratingDevs] = useState(false);
@@ -497,6 +498,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       showToastMsg("AI autofill failed: " + err.message, true);
     } finally {
       setIsAutofillingLeader(false);
+    }
+  };
+
+  const handlePhotoFileUpload = async (file: File) => {
+    if (!file) return;
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      showToastMsg("Please upload a JPEG, PNG, WebP, or GIF image.", true);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToastMsg("Image must be under 5MB.", true);
+      return;
+    }
+    setIsUploadingPhoto(true);
+    showToastMsg("Uploading photo to Firebase Storage...");
+    try {
+      const url = await api.uploadFile(file);
+      setLeaderForm(prev => ({ ...prev, photo_url: url }));
+      showToastMsg("Photo uploaded successfully and URL updated!");
+    } catch (err: any) {
+      showToastMsg("Photo upload failed: " + err.message, true);
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -1252,16 +1277,79 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                       />
                     </div>
 
-                    <div className="space-y-1 md:col-span-2">
-                      <label className="block font-bold text-slate-700">Leader Profile Portrait Image URL *</label>
-                      <input 
-                        type="url"
-                        value={leaderForm.photo_url}
-                        onChange={e => setLeaderForm({...leaderForm, photo_url: e.target.value})}
-                        placeholder="https://upload.wikimedia.org/...jpg"
-                        className="w-full p-2.5 border border-slate-300 rounded bg-white focus:outline-brand-blue font-mono text-[11px]"
-                        required
-                      />
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="block font-bold text-slate-700">Leader Profile Portrait Photo *</label>
+
+                      {/* Two-panel: Upload file  |  OR  |  Paste URL */}
+                      <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+
+                        {/* Option 1 — File Upload */}
+                        <label className={`flex-1 cursor-pointer flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-4 transition text-center min-h-[100px] ${isUploadingPhoto ? 'border-blue-400 bg-blue-50' : 'border-slate-300 hover:border-brand-blue hover:bg-blue-50/30 bg-white'}`}>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoFileUpload(f); e.target.value = ''; }}
+                            disabled={isUploadingPhoto}
+                          />
+                          {isUploadingPhoto ? (
+                            <>
+                              <Loader2 className="w-6 h-6 text-brand-blue animate-spin" />
+                              <span className="text-xs font-bold text-brand-blue font-mono">Uploading to Firebase...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-2xl">📤</span>
+                              <span className="text-xs font-black text-slate-700">Upload from Computer</span>
+                              <span className="text-[10px] text-slate-400 font-mono">JPG · PNG · WebP · GIF (max 5MB)</span>
+                              <span className="mt-1 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-full">Choose File</span>
+                            </>
+                          )}
+                        </label>
+
+                        {/* OR divider */}
+                        <div className="flex sm:flex-col items-center justify-center gap-1 shrink-0">
+                          <div className="flex-1 sm:w-px sm:h-full w-full h-px bg-slate-200" />
+                          <span className="text-[10px] font-black text-slate-400 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5 font-mono shrink-0">OR</span>
+                          <div className="flex-1 sm:w-px sm:h-full w-full h-px bg-slate-200" />
+                        </div>
+
+                        {/* Option 2 — Paste URL */}
+                        <div className="flex-1 flex flex-col justify-center gap-2 border-2 border-slate-200 rounded-xl p-4 bg-white min-h-[100px]">
+                          <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">🔗 Paste Image URL</span>
+                          <input
+                            type="url"
+                            value={leaderForm.photo_url}
+                            onChange={e => setLeaderForm({...leaderForm, photo_url: e.target.value})}
+                            placeholder="https://upload.wikimedia.org/...jpg"
+                            className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-brand-blue font-mono text-[10px] focus:bg-white transition"
+                          />
+                          <span className="text-[9px] text-slate-400 font-mono">Wikipedia, direct image links, etc.</span>
+                        </div>
+                      </div>
+
+                      {/* Live preview strip */}
+                      {leaderForm.photo_url && (
+                        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 mt-1">
+                          <img
+                            src={leaderForm.photo_url}
+                            alt="Preview"
+                            className="w-10 h-10 rounded-full object-cover border-2 border-emerald-300 shrink-0"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(leaderForm.full_name || 'Leader')}&background=0284c7&color=ffffff&bold=true`; }}
+                          />
+                          <div>
+                            <p className="text-[10px] font-black text-emerald-700">✓ Photo ready</p>
+                            <p className="text-[9px] text-emerald-600 font-mono truncate max-w-xs">{leaderForm.photo_url.substring(0, 60)}{leaderForm.photo_url.length > 60 ? '…' : ''}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setLeaderForm({...leaderForm, photo_url: ''})}
+                            className="ml-auto text-slate-400 hover:text-red-500 transition text-xs font-bold"
+                            title="Clear photo"
+                          >✕</button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-1">

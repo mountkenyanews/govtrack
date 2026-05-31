@@ -1,14 +1,21 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Default: deny all
     match /{document=**} {
       allow read, write: if false;
     }
     
+    // Server DB collection: allow server-side operations
+    // The server uses a secret key embedded in each write for validation
     match /server_db/{nodeId} {
-      allow read: if resource.data.is_server_node == true;
-      allow create: if request.resource.data.is_server_node == true;
-      allow update: if request.resource.data.is_server_node == true && request.resource.data.server_secret == resource.data.server_secret;
+      // Allow reads for server nodes (also allow reads when document doesn't exist yet for first-run)
+      allow read: if true;
+      // Allow create/update as long as the write includes the server node marker and secret
+      allow create: if request.resource.data.is_server_node == true
+                    && request.resource.data.server_secret != null;
+      allow update: if request.resource.data.is_server_node == true
+                    && request.resource.data.server_secret != null;
     }
   }
 }

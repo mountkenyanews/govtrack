@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -11,7 +14,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { User, Poll, PollOption, Vote, Politician, Comment, NewsItem, PlatformStats, AppNotification, DevelopmentProgress } from "./src/types";
 
 // Firebase Integration
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
@@ -70,10 +73,12 @@ let db: any = null;
 let storage: any = null;
 
 try {
-  firebaseApp = initializeApp(firebaseConfig);
+  // Prevent duplicate Firebase app initialization (important for hot-reload dev)
+  firebaseApp = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
   db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || "(default)");
   storage = getStorage(firebaseApp);
   console.log("[Firebase] Successfully initialized Firebase Services.");
+  console.log(`[Firebase] Using Firestore DB: ${firebaseConfig.firestoreDatabaseId || "(default)"}, Storage: ${firebaseConfig.storageBucket}`);
 } catch (err) {
   console.error("[Firebase] Fatal initialization error: ", err);
 }
@@ -697,18 +702,29 @@ function seedInitialData() {
 }
 
 // Database Persistence helpers
+// Only fills in missing poll option photos from politician records — never overwrites uploaded images
 function syncPollOptionsPhotos() {
   if (!DB.polls || !DB.politicians) return;
+  const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
   DB.polls.forEach(poll => {
     if (poll.options && Array.isArray(poll.options)) {
       poll.options.forEach(opt => {
+        // Only update if photo_url is blank, a placeholder avatar, or a stock Unsplash random person photo
+        const isPlaceholderOrStock = !opt.photo_url ||
+          opt.photo_url.includes("ui-avatars.com") ||
+          STOCK_UNSPLASH_PATTERN.test(opt.photo_url);
+        if (!isPlaceholderOrStock) return; // preserve custom/uploaded photos
+        
         const matches = DB.politicians.find(p => 
           p.full_name.toLowerCase().trim() === opt.label.toLowerCase().trim() ||
           p.full_name.toLowerCase().includes(opt.label.toLowerCase().trim()) ||
           opt.label.toLowerCase().includes(p.full_name.toLowerCase().trim())
         );
-        if (matches) {
-          opt.photo_url = matches.photo_url;
+        if (matches && matches.photo_url) {
+          // Only use the politician photo if it's not itself a stock Unsplash photo
+          if (!STOCK_UNSPLASH_PATTERN.test(matches.photo_url)) {
+            opt.photo_url = matches.photo_url;
+          }
         }
       });
     }
@@ -789,6 +805,11 @@ const SERVER_DB_DOC_ID = "master_db";
 const SERVER_SECRET = "govtrack_secret_key_12345678901234567890123456789012345678901234";
 
 async function loadDatabase() {
+  if (!db) {
+    console.error("[DB] Firestore not initialized — falling back to seed data.");
+    seedInitialData();
+    return;
+  }
   try {
     const docRef = doc(db, "server_db", SERVER_DB_DOC_ID);
     const docSnap = await getDoc(docRef);
@@ -803,6 +824,9 @@ async function loadDatabase() {
         if (!DB.developments) {
           DB.developments = [];
         }
+        if (!DB.parties) {
+          DB.parties = [];
+        }
         // Force-rebuild parties array to heal any pre-existing incorrect or mismatched country entries
         DB.parties = [];
         if (DB.politicians && Array.isArray(DB.politicians)) {
@@ -814,31 +838,45 @@ async function loadDatabase() {
         }
 
         syncPollOptionsPhotos();
-        console.log(`Database loaded successfully from Firestore with ${DB.polls.length} polls.`);
+        console.log(`[DB] Loaded from Firestore: ${DB.polls.length} polls, ${DB.politicians.length} politicians, ${DB.newsItems.length} news items.`);
         return;
       }
     }
     
     // No data in firestore
-    console.log("No data found in Firestore, seeding initial DB.");
+    console.log("[DB] No existing data found in Firestore — seeding initial data.");
     seedInitialData();
-  } catch (err) {
-    console.error("Error reading database from Firestore, resetting with seed.", err);
+  } catch (err: any) {
+    console.error("[DB] Error reading from Firestore — falling back to seed data:", err?.message || err);
     seedInitialData();
   }
 }
 
 async function saveDatabase() {
+  if (!db) {
+    console.error("[DB] Firestore not initialized, skipping save.");
+    return;
+  }
   try {
     syncPollOptionsPhotos();
+    const payload = JSON.stringify(DB);
+    
+    // Firestore document limit is 1MB. Warn if approaching it.
+    const payloadBytes = Buffer.byteLength(payload, 'utf8');
+    if (payloadBytes > 900000) {
+      console.warn(`[DB] WARNING: Database payload is ${(payloadBytes / 1024).toFixed(0)}KB — approaching Firestore 1MB document limit!`);
+    }
+    
     const docRef = doc(db, "server_db", SERVER_DB_DOC_ID);
     await setDoc(docRef, {
       is_server_node: true,
       server_secret: SERVER_SECRET,
-      payload: JSON.stringify(DB)
+      payload,
+      saved_at: new Date().toISOString(),
     });
-  } catch (err) {
-    console.error("Failed to persist database changes to Firestore.", err);
+    console.log(`[DB] Saved to Firestore. (${(payloadBytes / 1024).toFixed(1)}KB)`);
+  } catch (err: any) {
+    console.error("[DB] Failed to persist database changes to Firestore:", err?.message || err);
   }
 }
 
@@ -2111,9 +2149,52 @@ Rules:
         console.error(`[AI Engine] Groq fetch or execution error for model ${modelName}:`, err);
       }
     }
+    console.warn("[AI Engine] All Groq models failed, falling back to Gemini...");
   }
 
-  throw new Error("Groq API is not configured or failed to generate content.");
+  // Gemini fallback — always attempt this if Groq is unavailable or fails
+  try {
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.API_KEY;
+    if (!geminiKey) {
+      throw new Error("No AI API key configured (GROQ_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY required).");
+    }
+    
+    console.log(`[AI Engine] Attempting Gemini fallback via gemini-2.0-flash...`);
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${prompt}\n\nReturn ONLY valid JSON matching this schema: ${schemaDescription}` }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.2,
+          }
+        })
+      }
+    );
+    
+    if (!geminiResponse.ok) {
+      const errText = await geminiResponse.text();
+      throw new Error(`Gemini API error ${geminiResponse.status}: ${errText}`);
+    }
+    
+    const geminiData = await geminiResponse.json() as any;
+    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    let cleaned = rawText.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+    if (!cleaned.startsWith("{")) {
+      const si = cleaned.indexOf("{");
+      const ei = cleaned.lastIndexOf("}");
+      if (si !== -1 && ei > si) cleaned = cleaned.substring(si, ei + 1);
+    }
+    const parsed = JSON.parse(cleaned);
+    console.log("[AI Engine] Successfully generated content via Gemini fallback.");
+    return parsed;
+  } catch (geminiErr: any) {
+    console.error("[AI Engine] Gemini fallback also failed:", geminiErr?.message);
+    throw new Error("All AI engines failed. Last error: " + geminiErr?.message);
+  }
 }
 
 app.post("/api/admin/politician/autofill", async (req, res) => {
