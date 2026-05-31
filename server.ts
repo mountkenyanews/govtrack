@@ -896,7 +896,13 @@ app.use(async (req, res, next) => {
     return next();
   }
   try {
-    await getDatabaseLoadedPromise();
+    // In Vercel serverless environment, we bypass the cache and load fresh from Firestore
+    // on every API request to guarantee we never serve stale cached data from previously-warmed function instances.
+    if (process.env.VERCEL) {
+      await loadDatabase();
+    } else {
+      await getDatabaseLoadedPromise();
+    }
     next();
   } catch (err) {
     console.error("[Database Middleware] Error awaiting database load:", err);
