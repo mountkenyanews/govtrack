@@ -131,8 +131,18 @@ app.use((req, res, next) => {
 });
 
 // SEO: Dynamic sitemap.xml for Google indexing
-const SITE_URL = process.env.APP_URL || "https://govtrack.co.ke";
-app.get("/sitemap.xml", (req, res) => {
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    // Force reload the database fresh from Firestore to ensure Google crawler gets all dynamic pages instantly
+    await loadDatabase();
+  } catch (err) {
+    console.error("[Sitemap DB Load] Failed to load database fresh:", err);
+  }
+
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers.host || "govtrack.co.ke";
+  const siteUrl = process.env.APP_URL || `${protocol}://${host}`;
+
   const staticPages = [
     { loc: "/", priority: "1.0", changefreq: "daily" },
     { loc: "/#/polls", priority: "0.9", changefreq: "daily" },
@@ -167,7 +177,7 @@ app.get("/sitemap.xml", (req, res) => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${allPages.map(page => `  <url>
-    <loc>${SITE_URL}${page.loc}</loc>
+    <loc>${siteUrl}${page.loc}</loc>
     <lastmod>${(page as any).lastmod || today}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
@@ -176,6 +186,26 @@ ${allPages.map(page => `  <url>
 
   res.set("Content-Type", "application/xml");
   res.send(xml);
+});
+
+// Dynamic robots.txt to align sitemap location with the request domain
+app.get("/robots.txt", (req, res) => {
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers.host || "govtrack.co.ke";
+  const siteUrl = process.env.APP_URL || `${protocol}://${host}`;
+
+  const robots = `# GovTrack Robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+
+# Sitemap
+Sitemap: ${siteUrl}/sitemap.xml
+`;
+
+  res.set("Content-Type", "text/plain");
+  res.send(robots);
 });
 
 // Resolve paths
