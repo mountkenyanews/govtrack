@@ -88,6 +88,48 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: "20mb" }));
 
+// Global variable to track active Firestore save promises across all API request lifetimes
+let pendingSavePromise: Promise<void> | null = null;
+
+// Response Interceptor Middleware:
+// Guarantees Vercel won't suspend serverless container tasks before Firestore database writes finish.
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  const originalJson = res.json;
+
+  res.send = function (body) {
+    if (pendingSavePromise) {
+      pendingSavePromise.then(() => {
+        pendingSavePromise = null;
+        originalSend.call(res, body);
+      }).catch((err) => {
+        console.error("[DB Interceptor] Pending save failed in res.send:", err);
+        originalSend.call(res, body);
+      });
+    } else {
+      originalSend.call(res, body);
+    }
+    return res;
+  };
+
+  res.json = function (obj) {
+    if (pendingSavePromise) {
+      pendingSavePromise.then(() => {
+        pendingSavePromise = null;
+        originalJson.call(res, obj);
+      }).catch((err) => {
+        console.error("[DB Interceptor] Pending save failed in res.json:", err);
+        originalJson.call(res, obj);
+      });
+    } else {
+      originalJson.call(res, obj);
+    }
+    return res;
+  };
+
+  next();
+});
+
 // SEO: Dynamic sitemap.xml for Google indexing
 const SITE_URL = process.env.APP_URL || "https://govtrack.co.ke";
 app.get("/sitemap.xml", (req, res) => {
@@ -925,27 +967,33 @@ async function saveDatabase() {
     console.error("[DB] Firestore not initialized, skipping save.");
     return;
   }
-  try {
-    syncPollOptionsPhotos();
-    const payload = JSON.stringify(DB);
-    
-    // Firestore document limit is 1MB. Warn if approaching it.
-    const payloadBytes = Buffer.byteLength(payload, 'utf8');
-    if (payloadBytes > 900000) {
-      console.warn(`[DB] WARNING: Database payload is ${(payloadBytes / 1024).toFixed(0)}KB — approaching Firestore 1MB document limit!`);
+  const saveTask = async () => {
+    try {
+      syncPollOptionsPhotos();
+      const payload = JSON.stringify(DB);
+      
+      // Firestore document limit is 1MB. Warn if approaching it.
+      const payloadBytes = Buffer.byteLength(payload, 'utf8');
+      if (payloadBytes > 900000) {
+        console.warn(`[DB] WARNING: Database payload is ${(payloadBytes / 1024).toFixed(0)}KB — approaching Firestore 1MB document limit!`);
+      }
+      
+      const docRef = doc(db, "server_db", SERVER_DB_DOC_ID);
+      await setDoc(docRef, {
+        is_server_node: true,
+        server_secret: SERVER_SECRET,
+        payload,
+        saved_at: new Date().toISOString(),
+      });
+      console.log(`[DB] Saved to Firestore. (${(payloadBytes / 1024).toFixed(1)}KB)`);
+    } catch (err: any) {
+      console.error("[DB] Failed to persist database changes to Firestore:", err?.message || err);
+      throw err;
     }
-    
-    const docRef = doc(db, "server_db", SERVER_DB_DOC_ID);
-    await setDoc(docRef, {
-      is_server_node: true,
-      server_secret: SERVER_SECRET,
-      payload,
-      saved_at: new Date().toISOString(),
-    });
-    console.log(`[DB] Saved to Firestore. (${(payloadBytes / 1024).toFixed(1)}KB)`);
-  } catch (err: any) {
-    console.error("[DB] Failed to persist database changes to Firestore:", err?.message || err);
-  }
+  };
+
+  pendingSavePromise = saveTask();
+  await pendingSavePromise;
 }
 
 // Cache the promise so we load the database once, shared across requests/cold starts
