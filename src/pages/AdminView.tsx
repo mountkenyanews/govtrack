@@ -53,8 +53,9 @@ interface AdminViewProps {
 
 export const AdminView: React.FC<AdminViewProps> = ({ 
   onNavigate, 
-  currentUser 
+  currentUser: propCurrentUser 
 }) => {
+  const currentUser = propCurrentUser || getSavedUser();
   const [loading, setLoading] = useState(true);
   const [polls, setPolls] = useState<Poll[]>([]);
   const [politicians, setPoliticians] = useState<Politician[]>([]);

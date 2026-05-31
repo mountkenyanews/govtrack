@@ -25,6 +25,8 @@ import { AboutView } from "./pages/AboutView";
 import { HowItWorksView } from "./pages/HowItWorksView";
 import { LoginRegisterView } from "./pages/LoginRegisterView";
 
+import { getSavedUser } from "./utils/api";
+
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     const hash = window.location.hash;
@@ -49,6 +51,8 @@ export default function App() {
 
   // Simple and powerful router parsing inside App component
   const renderCurrentView = () => {
+    const currentUser = getSavedUser();
+
     // 1. Detailed Polls View matching: /polls/:id
     if (currentPath.startsWith("/polls/")) {
       const idStr = currentPath.split("/polls/")[1];
@@ -95,7 +99,7 @@ export default function App() {
       case "/dashboard":
         return <DashboardView onNavigate={handleNavigate} />;
       case "/admin":
-        return <AdminView onNavigate={handleNavigate} />;
+        return <AdminView onNavigate={handleNavigate} currentUser={currentUser} />;
       case "/news":
         return <NewsView onNavigate={handleNavigate} />;
       case "/about":
