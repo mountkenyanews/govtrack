@@ -934,45 +934,11 @@ async function loadDatabase() {
           DB.parties = [];
         }
         if (DB.politicians && Array.isArray(DB.politicians)) {
-          const PLACEHOLDER_PATTERN = /unsplash\.com\/photo-|ui-avatars\.com/;
-          const healPromises: Promise<void>[] = [];
-
           DB.politicians.forEach(pol => {
             if (pol.party) {
               ensurePartyExists(pol.party, pol.party_color || "#3b82f6", pol.country);
             }
-
-            // Auto-heal: If a politician has a legacy stock Unsplash photo or initials placeholder, try to resolve their real Wikipedia portrait
-            // to permanently heal them in your live Firestore DB!
-            if (PLACEHOLDER_PATTERN.test(pol.photo_url || "")) {
-              console.log(`[DB Auto-Heal] Politician "${pol.full_name}" has placeholder image. Resolving real portrait from Wikipedia...`);
-              
-              const healPromise = (async () => {
-                try {
-                  const wikiUrl = await getWikipediaImageUrl(pol.full_name);
-                  if (wikiUrl) {
-                    pol.photo_url = wikiUrl;
-                    console.log(`[DB Auto-Heal] Resolved Wikipedia photo for "${pol.full_name}" -> ${wikiUrl}`);
-                  } else {
-                    pol.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(pol.full_name)}&background=0A1628&color=ffffff&size=256&bold=true`;
-                    console.log(`[DB Auto-Heal] No Wikipedia photo found for "${pol.full_name}". Configured clean initials avatar.`);
-                  }
-                } catch (err) {
-                  console.error(`[DB Auto-Heal] Failed to resolve photo for "${pol.full_name}":`, err);
-                  pol.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(pol.full_name)}&background=0A1628&color=ffffff&size=256&bold=true`;
-                }
-              })();
-              
-              healPromises.push(healPromise);
-            }
           });
-
-          if (healPromises.length > 0) {
-            // Await all healing promises so they finish completely inside serverless environments before the execution gets suspended!
-            await Promise.all(healPromises);
-            syncPollOptionsPhotos();
-            await saveDatabase();
-          }
         }
 
         syncPollOptionsPhotos();
