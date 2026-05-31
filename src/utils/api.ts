@@ -399,5 +399,32 @@ export const api = {
 
   async getPollDeviceMetrics(pollId: number): Promise<any> {
     return apiFetch(`/api/polls/${pollId}/device-metrics`);
+  },
+
+  async createParty(data: any): Promise<Party> {
+    return apiFetch("/api/admin/parties", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateParty(id: number, data: any): Promise<Party> {
+    return apiFetch(`/api/admin/parties/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteParty(id: number): Promise<any> {
+    return apiFetch(`/api/admin/parties/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  async autofillParty(name: string): Promise<any> {
+    return apiFetch("/api/admin/party/autofill", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
   }
 };

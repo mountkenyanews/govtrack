@@ -2141,6 +2141,11 @@ app.post("/api/admin/politicians", async (req, res) => {
     return res.status(400).json({ error: "Name and profile photo are required." });
   }
 
+  const exists = DB.politicians.some(p => p.full_name.toLowerCase().trim() === full_name.toLowerCase().trim());
+  if (exists) {
+    return res.status(400).json({ error: `A profile for "${full_name}" already exists in the database.` });
+  }
+
   const nextId = DB.politicians.reduce((max, p) => p.id > max ? p.id : max, 0) + 1;
   const newPol: Politician = {
     id: nextId,
@@ -2208,6 +2213,149 @@ app.delete("/api/admin/politicians/:id", async (req, res) => {
   DB.politicians = DB.politicians.filter(p => p.id !== id);
   await saveDatabase();
   res.json({ success: true });
+});
+
+// 6.6. POLITICAL PARTIES ADMIN CRUD API
+app.post("/api/admin/parties", async (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Only admins can manage parties." });
+  }
+
+  const { name, abbreviation, logo_url, color, description, country, founded_year, ideology, headquarters, chairperson } = req.body;
+  if (!name || !abbreviation) {
+    return res.status(400).json({ error: "Name and abbreviation are required." });
+  }
+
+  if (!DB.parties) DB.parties = [];
+  const nextPartyId = DB.parties.reduce((max, p) => p.id > max ? p.id : max, 0) + 1;
+
+  const newParty = {
+    id: nextPartyId,
+    name: name.trim(),
+    abbreviation: abbreviation.trim().toUpperCase(),
+    logo_url: logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(abbreviation)}&background=${(color || "#3b82f6").replace("#", "")}&color=ffffff&bold=true&size=128`,
+    color: color || "#3b82f6",
+    description: description || "",
+    country: country || "Global",
+    founded_year: founded_year ? parseInt(founded_year) : 2020,
+    ideology: ideology || "Centrist Progressivism",
+    headquarters: headquarters || "Secretariat HQ",
+    chairperson: chairperson || "Secretariat General",
+  };
+
+  DB.parties.push(newParty);
+  await saveDatabase();
+  res.status(201).json(newParty);
+});
+
+app.put("/api/admin/parties/:id", async (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Only admins can manage parties." });
+  }
+
+  const partyId = parseInt(req.params.id);
+  if (!DB.parties) DB.parties = [];
+  const partyIndex = DB.parties.findIndex(p => p.id === partyId);
+  if (partyIndex === -1) {
+    return res.status(404).json({ error: "Party not found." });
+  }
+
+  const { name, abbreviation, logo_url, color, description, country, founded_year, ideology, headquarters, chairperson } = req.body;
+  const p = DB.parties[partyIndex];
+
+  if (name !== undefined) p.name = name.trim();
+  if (abbreviation !== undefined) p.abbreviation = abbreviation.trim().toUpperCase();
+  if (logo_url !== undefined) p.logo_url = logo_url;
+  if (color !== undefined) p.color = color;
+  if (description !== undefined) p.description = description;
+  if (country !== undefined) p.country = country;
+  if (founded_year !== undefined) p.founded_year = founded_year ? parseInt(founded_year) : p.founded_year;
+  if (ideology !== undefined) p.ideology = ideology;
+  if (headquarters !== undefined) p.headquarters = headquarters;
+  if (chairperson !== undefined) p.chairperson = chairperson;
+
+  await saveDatabase();
+  res.json(p);
+});
+
+app.delete("/api/admin/parties/:id", async (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Only admins can manage parties." });
+  }
+
+  const partyId = parseInt(req.params.id);
+  if (!DB.parties) DB.parties = [];
+  DB.parties = DB.parties.filter(p => p.id !== partyId);
+  await saveDatabase();
+  res.json({ success: true });
+});
+
+app.post("/api/admin/party/autofill", async (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Only admins can manage parties." });
+  }
+
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Party name or abbreviation is required." });
+
+  try {
+    const fallbackConfig = {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          abbreviation: { type: Type.STRING, description: "Official political party abbreviation e.g. ODM, GOP, ANC, Labour" },
+          color: { type: Type.STRING, description: "Official theme hex color e.g. #3b82f6" },
+          description: { type: Type.STRING, description: "A detailed 1-2 sentence overview of the party and its political mission" },
+          country: { type: Type.STRING, description: "Country of jurisdiction" },
+          founded_year: { type: Type.INTEGER, description: "Year the party was founded" },
+          ideology: { type: Type.STRING, description: "Core political ideology or tenets" },
+          headquarters: { type: Type.STRING, description: "Headquarters city/location" },
+          chairperson: { type: Type.STRING, description: "Current party leader or chairperson" }
+        },
+        required: ["abbreviation", "color", "description", "country", "founded_year", "ideology", "headquarters", "chairperson"]
+      }
+    };
+
+    const schemaDescription = `{
+      "abbreviation": "Official abbreviation (string)",
+      "color": "Hex color code e.g. #3b82f6 (string)",
+      "description": "Short 1-2 sentence description (string)",
+      "country": "Country (string)",
+      "founded_year": "Year founded (integer)",
+      "ideology": "Ideology (string)",
+      "headquarters": "Headquarters location (string)",
+      "chairperson": "Chairperson/Leader name (string)"
+    }`;
+
+    const [wikiLogoUrl, generated] = await Promise.all([
+      getWikipediaImageUrl(name + " political party logo emblem seal"),
+      generateAIContent(
+        `Provide accurate details for the political party named "${name}". Use real information.`,
+        schemaDescription,
+        {
+          model: "gemini-3.5-flash",
+          contents: `Provide accurate details for the political party named "${name}". Use real information.`,
+          config: fallbackConfig
+        }
+      )
+    ]);
+
+    if (wikiLogoUrl) {
+      generated.logo_url = wikiLogoUrl;
+    } else {
+      generated.logo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(generated.abbreviation || name)}&background=${(generated.color || "#3b82f6").replace("#", "")}&color=ffffff&bold=true&size=128`;
+    }
+
+    res.json(generated);
+  } catch (error: any) {
+    console.error("AI party autofill error:", error);
+    res.status(500).json({ error: "Failed to generate AI party data: " + error.message });
+  }
 });
 
 // Helper to resolve Wikipedia page image portrait

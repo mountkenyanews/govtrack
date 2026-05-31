@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { User, Poll, Politician, NewsItem, Comment, PollOption } from "../types";
+import { User, Poll, Politician, NewsItem, Comment, PollOption, Party } from "../types";
 import { api, getSavedUser } from "../utils/api";
 import { 
   Lock, 
@@ -48,32 +48,52 @@ interface AdminLogs {
 
 interface AdminViewProps {
   onNavigate: (path: string) => void;
+  currentUser: User | null;
 }
 
-export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
-  const [currentUser] = useState<User | null>(getSavedUser());
+export const AdminView: React.FC<AdminViewProps> = ({ 
+  onNavigate, 
+  currentUser 
+}) => {
+  const [loading, setLoading] = useState(true);
   const [polls, setPolls] = useState<Poll[]>([]);
-  const [selectedPollIds, setSelectedPollIds] = useState<Set<number>>(new Set());
   const [politicians, setPoliticians] = useState<Politician[]>([]);
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [comments, setComments] = useState<any[]>([]);
-  const [logs, setLogs] = useState<AdminLogs[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  
   const [pendingDevelopments, setPendingDevelopments] = useState<any[]>([]);
-  const [isGeneratingDevs, setIsGeneratingDevs] = useState(false);
-  const [genDevPolId, setGenDevPolId] = useState<number | null>(null);
-
-  const [aiDevModalOpen, setAiDevModalOpen] = useState(false);
+  const [logs, setLogs] = useState<AdminLogs[]>([]);
   const [aiDevContext, setAiDevContext] = useState("");
+  const [aiDevModalOpen, setAiDevModalOpen] = useState(false);
+  const [genDevPolId, setGenDevPolId] = useState<number | null>(null);
+  const [isGeneratingDevs, setIsGeneratingDevs] = useState(false);
   const [aiDevDrafts, setAiDevDrafts] = useState<any[]>([]);
   const [devSearchTerm, setDevSearchTerm] = useState("");
   const [isMassGenerating, setIsMassGenerating] = useState(false);
 
-  // Available tabs: politicians, polls, news, comments, security, developments
-  const [activeTab, setActiveTab] = useState<"leaders" | "polls" | "news" | "comments" | "security" | "developments">("leaders");
+  // Available tabs: politicians, polls, news, comments, security, developments, parties
+  const [activeTab, setActiveTab] = useState<"leaders" | "polls" | "news" | "comments" | "security" | "developments" | "parties">("leaders");
   
+  // Political Party Form State
+  const [parties, setParties] = useState<Party[]>([]);
+  const [isEditingParty, setIsEditingParty] = useState(false);
+  const [isAutofillingParty, setIsAutofillingParty] = useState(false);
+  const [selectedPartyId, setSelectedPartyId] = useState<number | null>(null);
+  const [partyForm, setPartyForm] = useState({
+    name: "",
+    abbreviation: "",
+    logo_url: "",
+    color: "#3b82f6",
+    description: "",
+    country: "Kenya",
+    founded_year: 2020,
+    ideology: "Centrist Progressivism",
+    headquarters: "Secretariat HQ",
+    chairperson: "Secretariat General"
+  });
+  const [partySearchTerm, setPartySearchTerm] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [selectedPollIds, setSelectedPollIds] = useState<Set<number>>(new Set());
+
   const [posterPoll, setPosterPoll] = useState<Poll | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -175,6 +195,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         setPendingDevelopments(Array.isArray(pDevs) ? pDevs : []);
       } catch (e) {
         console.error("Failed to load developments", e);
+      }
+
+      try {
+        const allParties = await api.getParties();
+        setParties(Array.isArray(allParties) ? allParties : []);
+      } catch (e) {
+        console.error("Failed to load parties", e);
       }
 
       setLogs([
@@ -318,13 +345,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       })
       .filter(name => name.length >= 2);
 
-    if (parsedNames.length === 0) {
+    // Deduplicate parsedNames (case-insensitive, preserving the first occurrence's original casing)
+    const uniqueParsedNames: string[] = [];
+    const seenNames = new Set<string>();
+    for (const name of parsedNames) {
+      const normalized = name.toLowerCase().trim();
+      if (!seenNames.has(normalized)) {
+        seenNames.add(normalized);
+        uniqueParsedNames.push(name);
+      }
+    }
+
+    if (uniqueParsedNames.length === 0) {
       showToastMsg("No valid politician names detected. Ensure names are at least 2 characters.", true);
       return;
     }
 
     // Initialize list of drafts
-    const initialDrafts = parsedNames.map(name => ({
+    const initialDrafts = uniqueParsedNames.map(name => ({
       full_name: name,
       title: "",
       country: "Kenya",
@@ -340,11 +378,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
     setDraftPoliticians(initialDrafts);
     setIsProcessingMass(true);
-    showToastMsg(`Initiating sequential AI extraction for ${parsedNames.length} names...`);
+    showToastMsg(`Initiating sequential AI extraction for ${uniqueParsedNames.length} names...`);
 
     // Process one by one
-    for (let i = 0; i < parsedNames.length; i++) {
-      const currentName = parsedNames[i];
+    for (let i = 0; i < uniqueParsedNames.length; i++) {
+      const currentName = uniqueParsedNames[i];
       
       // Update draft status: Checking
       setDraftPoliticians(prev => prev.map((d, idx) => idx === i ? { ...d, status: 'checking', message: "Reconciling duplicates in database..." } : d));
@@ -415,6 +453,100 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       setDraftPoliticians([]);
     } catch (err: any) {
       showToastMsg("Failed to commit profiles: " + err.message, true);
+    }
+  };
+
+  // --- POLITICAL PARTY ACTION HANDLERS ---
+  const startCreateParty = () => {
+    setPartyForm({
+      name: "",
+      abbreviation: "",
+      logo_url: "",
+      color: "#3b82f6",
+      description: "",
+      country: "Kenya",
+      founded_year: 2020,
+      ideology: "Centrist Progressivism",
+      headquarters: "Secretariat HQ",
+      chairperson: "Secretariat General"
+    });
+    setSelectedPartyId(null);
+    setIsEditingParty(true);
+  };
+
+  const startEditParty = (party: Party) => {
+    setPartyForm({
+      name: party.name,
+      abbreviation: party.abbreviation,
+      logo_url: party.logo_url || "",
+      color: party.color || "#3b82f6",
+      description: party.description || "",
+      country: party.country || "Kenya",
+      founded_year: party.founded_year || 2020,
+      ideology: party.ideology || "Centrist Progressivism",
+      headquarters: party.headquarters || "Secretariat HQ",
+      chairperson: party.chairperson || "Secretariat General"
+    });
+    setSelectedPartyId(party.id);
+    setIsEditingParty(true);
+  };
+
+  const handleAutofillParty = async () => {
+    if (!partyForm.name.trim()) return showToastMsg("Please enter a party name first to run AI auto-fill.", true);
+    setIsAutofillingParty(true);
+    showToastMsg(`AI is fetching details for "${partyForm.name}"...`);
+    try {
+      const data = await api.autofillParty(partyForm.name);
+      setPartyForm(prev => ({
+        ...prev,
+        abbreviation: data.abbreviation || prev.abbreviation,
+        color: data.color || prev.color,
+        logo_url: data.logo_url || prev.logo_url,
+        description: data.description || prev.description,
+        country: data.country || prev.country,
+        founded_year: data.founded_year || prev.founded_year,
+        ideology: data.ideology || prev.ideology,
+        headquarters: data.headquarters || prev.headquarters,
+        chairperson: data.chairperson || prev.chairperson
+      }));
+      showToastMsg("AI party extraction complete!");
+    } catch (err: any) {
+      showToastMsg("AI party autofill failed: " + err.message, true);
+    } finally {
+      setIsAutofillingParty(false);
+    }
+  };
+
+  const handleSaveParty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partyForm.name.trim() || !partyForm.abbreviation.trim()) {
+      return showToastMsg("Party name and abbreviation are required.", true);
+    }
+    try {
+      if (selectedPartyId) {
+        const result = await api.updateParty(selectedPartyId, partyForm);
+        setParties(parties.map(p => p.id === selectedPartyId ? result : p));
+        showToastMsg(`Party "${partyForm.name}" updated successfully.`);
+      } else {
+        const result = await api.createParty(partyForm);
+        setParties([...parties, result]);
+        showToastMsg(`Party "${partyForm.name}" created and saved.`);
+      }
+      setIsEditingParty(false);
+      setSelectedPartyId(null);
+    } catch (err: any) {
+      showToastMsg("Failed to save party: " + err.message, true);
+    }
+  };
+
+  const handleDeleteParty = async (id: number, name: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete the political party "${name}"?`)) return;
+    try {
+      await api.deleteParty(id);
+      setParties(parties.filter(p => p.id !== id));
+      showToastMsg(`Political party "${name}" deleted.`);
+    } catch (err: any) {
+      showToastMsg("Failed to delete party: " + err.message, true);
     }
   };
 
@@ -913,6 +1045,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       <div className="flex border-b border-slate-200 gap-1 overflow-x-auto">
         {[
           { id: "leaders", label: "🇺🇳 Leaders & Portfolios", count: politicians.length },
+          { id: "parties", label: "🏛️ Party Networks", count: parties.length },
           { id: "polls", label: "🗳️ Survey Polls", count: polls.length },
           { id: "developments", label: "📈 Dev Verifications", count: pendingDevelopments.length },
           { id: "news", label: "📰 News & Policy", count: newsItems.length },
@@ -926,6 +1059,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
               setIsEditingLeader(false);
               setIsEditingPoll(false);
               setIsEditingNews(false);
+              setIsEditingParty(false);
             }}
             className={`px-4 py-3 font-bold text-xs font-mono uppercase tracking-wider transition-all border-b-2 shrink-0 flex items-center gap-1.5 ${
               activeTab === p.id 
@@ -2431,6 +2565,375 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* TAB 6: POLITICAL PARTY NETWORKS */}
+          {activeTab === "parties" && (
+            <div className="space-y-6 animate-fadeIn">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                  <h2 className="text-sm font-black text-slate-800 font-mono uppercase">Political Party Networks</h2>
+                  <p className="text-[11px] text-slate-500">Configure political platforms, colors, emblems, ideologies, and establish headquarters.</p>
+                </div>
+                {!isEditingParty && (
+                  <button
+                    onClick={startCreateParty}
+                    className="bg-brand-blue hover:bg-blue-700 text-white font-black text-xs px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow transition font-mono self-start sm:self-auto"
+                  >
+                    <Plus className="w-4 h-4" /> Add Political Party
+                  </button>
+                )}
+              </div>
+
+              {isEditingParty ? (
+                <form onSubmit={handleSaveParty} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 text-left animate-fadeIn">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                    <h3 className="font-extrabold text-slate-800 text-xs font-mono uppercase tracking-wider">
+                      {selectedPartyId ? "⚙️ Edit Political Party Parameters" : "✨ Instantiate New Political Party"}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingParty(false)}
+                      className="text-xs text-slate-500 hover:text-slate-800 font-mono border border-slate-200 rounded-lg px-3 py-1.5 bg-slate-50 transition"
+                    >
+                      Cancel / Close Form
+                    </button>
+                  </div>
+
+                  {/* AI Autofill Banner Helper */}
+                  <div className="bg-gradient-to-r from-amber-50 to-blue-50 border border-amber-200/60 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Party Name (Required for AI Autofill)</label>
+                        <input
+                          type="text"
+                          value={partyForm.name}
+                          onChange={(e) => setPartyForm({ ...partyForm, name: e.target.value })}
+                          placeholder="e.g. Orange Democratic Movement, Labour Party UK"
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition font-semibold"
+                          required
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAutofillParty}
+                        disabled={isAutofillingParty || !partyForm.name.trim()}
+                        className="sm:mt-5 bg-brand-gold hover:bg-amber-500 text-amber-950 text-xs font-black px-5 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow transition font-mono border border-amber-300 disabled:opacity-50"
+                      >
+                        {isAutofillingParty ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Auto-Extracting...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="w-4 h-4" /> AI Auto-Fill Profile
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500 leading-normal">
+                      💡 <strong>Pro-Tip:</strong> Type the official name and hit auto-fill. Our AI Agent fetches founded years, headquarters, chairpersons, ideologies, primary brand HEX codes, and crawls Wikipedia for their high-quality emblem logo!
+                    </p>
+                  </div>
+
+                  {/* Detailed Input Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Abbreviation *</label>
+                      <input
+                        type="text"
+                        value={partyForm.abbreviation}
+                        onChange={(e) => setPartyForm({ ...partyForm, abbreviation: e.target.value })}
+                        placeholder="e.g. ODM, LAB, ANC"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue transition font-mono font-bold uppercase"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Jurisdiction / Country *</label>
+                      <input
+                        type="text"
+                        value={partyForm.country}
+                        onChange={(e) => setPartyForm({ ...partyForm, country: e.target.value })}
+                        placeholder="Select or type jurisdiction"
+                        list="countries-datalist"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue transition font-semibold"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Official Brand Color *</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={partyForm.color}
+                          onChange={(e) => setPartyForm({ ...partyForm, color: e.target.value })}
+                          className="w-10 h-9 p-0 bg-transparent border-0 rounded cursor-pointer shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={partyForm.color}
+                          onChange={(e) => setPartyForm({ ...partyForm, color: e.target.value })}
+                          placeholder="#0033a0"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-brand-blue transition font-mono font-bold uppercase"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Emblem Logo URL</label>
+                      <input
+                        type="url"
+                        value={partyForm.logo_url}
+                        onChange={(e) => setPartyForm({ ...partyForm, logo_url: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue transition font-mono text-[11px]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Ideology</label>
+                      <input
+                        type="text"
+                        value={partyForm.ideology}
+                        onChange={(e) => setPartyForm({ ...partyForm, ideology: e.target.value })}
+                        placeholder="e.g. Social Democracy, Liberalism"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue transition font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Founded Year</label>
+                      <input
+                        type="number"
+                        value={partyForm.founded_year}
+                        onChange={(e) => setPartyForm({ ...partyForm, founded_year: parseInt(e.target.value) || "" })}
+                        placeholder="e.g. 1994"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue transition font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">National Headquarters</label>
+                      <input
+                        type="text"
+                        value={partyForm.headquarters}
+                        onChange={(e) => setPartyForm({ ...partyForm, headquarters: e.target.value })}
+                        placeholder="e.g. Chungwa House, Nairobi"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue transition font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Party Chairperson / Leader</label>
+                      <input
+                        type="text"
+                        value={partyForm.chairperson}
+                        onChange={(e) => setPartyForm({ ...partyForm, chairperson: e.target.value })}
+                        placeholder="e.g. Raila Odinga"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue transition font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1 font-mono uppercase tracking-wider text-[10px]">Party Description / Historical Manifests</label>
+                    <textarea
+                      value={partyForm.description}
+                      onChange={(e) => setPartyForm({ ...partyForm, description: e.target.value })}
+                      placeholder="Enter a brief background, history, major achievements and alignment details..."
+                      rows={4}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs outline-none focus:border-brand-blue transition leading-relaxed resize-y font-semibold"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingParty(false)}
+                      className="px-5 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition font-mono"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-brand-blue hover:bg-blue-700 text-white px-6 py-2 text-xs font-black rounded-lg transition shadow-md font-mono"
+                    >
+                      Save Party Record
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-6">
+                  {/* Search and Filters */}
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        placeholder="Search parties by name, abbreviation, country, or ideology..."
+                        value={partySearchTerm}
+                        onChange={(e) => setPartySearchTerm(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl py-2.5 pl-10 pr-4 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue font-semibold transition"
+                      />
+                      <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                      {partySearchTerm && (
+                        <button
+                          onClick={() => setPartySearchTerm("")}
+                          className="absolute right-3 top-2.5 text-xs font-mono text-slate-400 hover:text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Parties Grid */}
+                  {parties.length > 0 ? (
+                    (() => {
+                      const filteredParties = parties.filter(p => {
+                        const search = partySearchTerm.toLowerCase();
+                        return (
+                          p.name.toLowerCase().includes(search) ||
+                          p.abbreviation.toLowerCase().includes(search) ||
+                          p.country.toLowerCase().includes(search) ||
+                          (p.ideology && p.ideology.toLowerCase().includes(search))
+                        );
+                      });
+
+                      if (filteredParties.length === 0) {
+                        return (
+                          <div className="py-12 text-center text-slate-400 text-xs font-mono italic">
+                            No parties matched your criteria. Add one using the button above.
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredParties.map((party) => {
+                            // Dynamically calculate members
+                            const membersCount = politicians.filter(pol => 
+                              pol.party?.toLowerCase().trim() === party.abbreviation.toLowerCase().trim() ||
+                              pol.party?.toLowerCase().trim() === party.name.toLowerCase().trim()
+                            ).length;
+
+                            return (
+                              <div
+                                key={party.id}
+                                className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition relative flex flex-col justify-between overflow-hidden"
+                                style={{ borderTop: `4px solid ${party.color || '#3b82f6'}` }}
+                              >
+                                <div className="space-y-4">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-slate-50 shrink-0 overflow-hidden">
+                                        {party.logo_url ? (
+                                          <img
+                                            src={party.logo_url}
+                                            alt={party.abbreviation}
+                                            className="w-full h-full object-contain p-1"
+                                            onError={(e) => {
+                                              // Fallback if image fails to load
+                                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(party.abbreviation)}&background=${(party.color || '#3b82f6').replace('#', '')}&color=ffffff&bold=true&size=128`;
+                                            }}
+                                          />
+                                        ) : (
+                                          <div
+                                            className="w-full h-full flex items-center justify-center text-white text-sm font-black font-mono uppercase"
+                                            style={{ backgroundColor: party.color || '#3b82f6' }}
+                                          >
+                                            {party.abbreviation.substring(0, 3)}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="text-left">
+                                        <div className="flex items-center gap-1.5">
+                                          <span
+                                            className="text-[10px] font-black tracking-wider uppercase px-2 py-0.5 rounded text-white font-mono"
+                                            style={{ backgroundColor: party.color || '#3b82f6' }}
+                                          >
+                                            {party.abbreviation}
+                                          </span>
+                                          <span className="text-[10px] font-bold text-slate-400 font-mono">
+                                            ID #{party.id}
+                                          </span>
+                                        </div>
+                                        <h3 className="font-extrabold text-slate-800 text-xs mt-1 leading-snug">
+                                          {party.name}
+                                        </h3>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <p className="text-[11px] text-slate-600 line-clamp-3 text-left leading-relaxed">
+                                    {party.description || "No description provided for this political network profile."}
+                                  </p>
+
+                                  <div className="border-t border-slate-100 pt-3 space-y-2 text-[11px]">
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400 font-semibold">Jurisdiction:</span>
+                                      <span className="font-bold text-slate-700">{party.country}</span>
+                                    </div>
+                                    {party.ideology && (
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400 font-semibold">Ideology:</span>
+                                        <span className="font-bold text-slate-700 truncate max-w-[150px]">{party.ideology}</span>
+                                      </div>
+                                    )}
+                                    {party.chairperson && (
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400 font-semibold">Leader / Chair:</span>
+                                        <span className="font-bold text-slate-700 truncate max-w-[150px]">{party.chairperson}</span>
+                                      </div>
+                                    )}
+                                    {party.founded_year && (
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400 font-semibold">Founded Year:</span>
+                                        <span className="font-mono font-bold text-slate-700">{party.founded_year}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between items-center bg-slate-50 rounded-lg p-2 mt-1 border border-slate-100">
+                                      <span className="text-slate-500 font-bold flex items-center gap-1">
+                                        <Users className="w-3.5 h-3.5 text-slate-400" /> Active Leaders:
+                                      </span>
+                                      <span className="font-mono font-black text-brand-blue text-xs">{membersCount}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-2 border-t border-slate-100 pt-4 mt-4">
+                                  <button
+                                    onClick={() => startEditParty(party)}
+                                    className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 transition font-mono"
+                                  >
+                                    <Edit className="w-3.5 h-3.5 text-slate-500" /> Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteParty(party.id, party.name)}
+                                    className="bg-red-50 hover:bg-red-100 border border-red-200/60 text-red-600 font-bold text-xs px-3 py-2 rounded-lg flex items-center justify-center gap-1 transition font-mono"
+                                    title="Delete Party"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="py-16 text-center text-xs font-mono text-slate-400 italic bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                      🏛️ No political party registries loaded in live database. Add one above!
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
