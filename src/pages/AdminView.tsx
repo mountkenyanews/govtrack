@@ -1220,20 +1220,15 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
                     <div className="space-y-1">
                       <label className="block font-bold text-slate-700">Country Jurisdiction *</label>
-                      <select 
+                      <input 
+                        type="text"
                         value={leaderForm.country}
                         onChange={e => setLeaderForm({...leaderForm, country: e.target.value})}
-                        className="w-full p-2.5 border border-slate-300 rounded bg-white font-bold"
-                      >
-                        <option value="Kenya">Kenya</option>
-                        <option value="USA">USA</option>
-                        <option value="UK">UK</option>
-                        <option value="South Africa">South Africa</option>
-                        <option value="France">France</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Nigeria">Nigeria</option>
-                        <option value="Tanzania">Tanzania</option>
-                      </select>
+                        list="countries-datalist"
+                        placeholder="e.g. Kenya, USA"
+                        className="w-full p-2.5 border border-slate-300 rounded bg-white focus:outline-brand-blue"
+                        required
+                      />
                     </div>
 
                     <div className="space-y-1">
@@ -1574,19 +1569,15 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
                         <div className="space-y-1">
                           <label className="block font-bold text-slate-700">Region / Country *</label>
-                          <select 
+                          <input 
+                            type="text"
                             value={pollForm.country}
                             onChange={e => setPollForm({...pollForm, country: e.target.value})}
-                            className="w-full p-2.5 border border-slate-300 rounded bg-white font-bold"
-                          >
-                            <option value="Kenya">Kenya</option>
-                            <option value="USA">USA</option>
-                            <option value="UK">UK</option>
-                            <option value="South Africa">South Africa</option>
-                            <option value="France">France</option>
-                            <option value="Germany">Germany</option>
-                            <option value="Global">Global</option>
-                          </select>
+                            list="countries-datalist"
+                            placeholder="e.g. Kenya, Global"
+                            className="w-full p-2.5 border border-slate-300 rounded bg-white focus:outline-brand-blue"
+                            required
+                          />
                         </div>
                       </div>
 
@@ -2176,20 +2167,15 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
                     <div className="space-y-1">
                       <label className="block font-bold text-slate-700">Country Cover *</label>
-                      <select 
+                      <input 
+                        type="text"
                         value={newsForm.country}
                         onChange={e => setNewsForm({...newsForm, country: e.target.value})}
-                        className="w-full p-2.5 border border-slate-300 rounded bg-white font-bold"
-                      >
-                        <option value="Global">Global</option>
-                        <option value="Kenya">Kenya</option>
-                        <option value="USA">USA</option>
-                        <option value="UK">UK</option>
-                        <option value="South Africa">South Africa</option>
-                        <option value="France">France</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Nigeria">Nigeria</option>
-                      </select>
+                        list="countries-datalist"
+                        placeholder="e.g. Kenya, Global"
+                        className="w-full p-2.5 border border-slate-300 rounded bg-white focus:outline-brand-blue"
+                        required
+                      />
                     </div>
 
                     <div className="space-y-1 md:col-span-3">
@@ -2542,6 +2528,33 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       )}
 
       {posterPoll && <PosterGenerator poll={posterPoll} onClose={() => setPosterPoll(null)} />}
+
+      <datalist id="countries-datalist">
+        <option value="Kenya" />
+        <option value="USA" />
+        <option value="UK" />
+        <option value="South Africa" />
+        <option value="France" />
+        <option value="Germany" />
+        <option value="Nigeria" />
+        <option value="Tanzania" />
+        <option value="Uganda" />
+        <option value="Rwanda" />
+        <option value="Burundi" />
+        <option value="Somalia" />
+        <option value="Ethiopia" />
+        <option value="Sudan" />
+        <option value="Egypt" />
+        <option value="Ghana" />
+        <option value="Canada" />
+        <option value="Australia" />
+        <option value="India" />
+        <option value="China" />
+        <option value="Japan" />
+        <option value="Brazil" />
+        <option value="Mexico" />
+        <option value="Global" />
+      </datalist>
 
     </div>
   );
