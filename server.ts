@@ -693,9 +693,43 @@ function seedInitialData() {
   // Populate parties from seeded politicians
   DB.parties = [];
   if (DB.politicians && Array.isArray(DB.politicians)) {
+    const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
+    let healTriggered = false;
+
     DB.politicians.forEach(pol => {
-      ensurePartyExists(pol.party, pol.party_color || "#3b82f6", pol.country);
+      if (pol.party) {
+        ensurePartyExists(pol.party, pol.party_color || "#3b82f6", pol.country);
+      }
+
+      // Auto-heal: If a politician has a legacy stock Unsplash photo, replace it with a real Wikipedia portrait
+      // or a clean initials-based avatar so they are permanently cleared from your live Firestore DB!
+      if (STOCK_UNSPLASH_PATTERN.test(pol.photo_url || "")) {
+        healTriggered = true;
+        console.log(`[DB Auto-Heal] Politician "${pol.full_name}" has legacy Unsplash image. Resolving real portrait...`);
+        getWikipediaImageUrl(pol.full_name).then(wikiUrl => {
+          if (wikiUrl) {
+            pol.photo_url = wikiUrl;
+            console.log(`[DB Auto-Heal] Resolved Wikipedia photo for "${pol.full_name}" -> ${wikiUrl}`);
+          } else {
+            pol.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(pol.full_name)}&background=0A1628&color=ffffff&size=256&bold=true`;
+            console.log(`[DB Auto-Heal] No Wikipedia photo found for "${pol.full_name}". Configured clean initials avatar.`);
+          }
+          saveDatabase();
+        }).catch(err => {
+          console.error(`[DB Auto-Heal] Failed to resolve photo for "${pol.full_name}":`, err);
+          pol.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(pol.full_name)}&background=0A1628&color=ffffff&size=256&bold=true`;
+          saveDatabase();
+        });
+      }
     });
+
+    if (healTriggered) {
+      // Immediately run a sync so poll options also benefit from any initial fast updates
+      setTimeout(() => {
+        syncPollOptionsPhotos();
+        saveDatabase();
+      }, 1500);
+    }
   }
 
   saveDatabase();
@@ -830,11 +864,43 @@ async function loadDatabase() {
         // Force-rebuild parties array to heal any pre-existing incorrect or mismatched country entries
         DB.parties = [];
         if (DB.politicians && Array.isArray(DB.politicians)) {
+          const PLACEHOLDER_PATTERN = /unsplash\.com\/photo-|ui-avatars\.com/;
+          let healTriggered = false;
+
           DB.politicians.forEach(pol => {
             if (pol.party) {
               ensurePartyExists(pol.party, pol.party_color || "#3b82f6", pol.country);
             }
+
+            // Auto-heal: If a politician has a legacy stock Unsplash photo or initials placeholder, try to resolve their real Wikipedia portrait
+            // to permanently heal them in your live Firestore DB!
+            if (PLACEHOLDER_PATTERN.test(pol.photo_url || "")) {
+              healTriggered = true;
+              console.log(`[DB Auto-Heal] Politician "${pol.full_name}" has placeholder image. Resolving real portrait from Wikipedia...`);
+              getWikipediaImageUrl(pol.full_name).then(wikiUrl => {
+                if (wikiUrl) {
+                  pol.photo_url = wikiUrl;
+                  console.log(`[DB Auto-Heal] Resolved Wikipedia photo for "${pol.full_name}" -> ${wikiUrl}`);
+                } else {
+                  pol.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(pol.full_name)}&background=0A1628&color=ffffff&size=256&bold=true`;
+                  console.log(`[DB Auto-Heal] No Wikipedia photo found for "${pol.full_name}". Configured clean initials avatar.`);
+                }
+                saveDatabase();
+              }).catch(err => {
+                console.error(`[DB Auto-Heal] Failed to resolve photo for "${pol.full_name}":`, err);
+                pol.photo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(pol.full_name)}&background=0A1628&color=ffffff&size=256&bold=true`;
+                saveDatabase();
+              });
+            }
           });
+
+          if (healTriggered) {
+            // Immediately run a sync so poll options also benefit from any initial fast updates
+            setTimeout(() => {
+              syncPollOptionsPhotos();
+              saveDatabase();
+            }, 1500);
+          }
         }
 
         syncPollOptionsPhotos();
@@ -2058,14 +2124,15 @@ app.delete("/api/admin/politicians/:id", (req, res) => {
 // Helper to resolve Wikipedia page image portrait
 async function getWikipediaImageUrl(name: string): Promise<string> {
   try {
+    const headers = { "User-Agent": "GovTrackApp/1.0 (contact@govtrack.co.ke)" };
     const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name)}&format=json&origin=*`;
-    const searchRes = await fetch(searchUrl);
+    const searchRes = await fetch(searchUrl, { headers });
     const searchData = await searchRes.json() as any;
     const title = searchData?.query?.search?.[0]?.title;
     if (!title) return "";
 
     const imgUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail|original&pithumbsize=250&titles=${encodeURIComponent(title)}&redirects=1&origin=*`;
-    const imgRes = await fetch(imgUrl);
+    const imgRes = await fetch(imgUrl, { headers });
     const imgData = await imgRes.json() as any;
     const pages = imgData?.query?.pages || {};
     for (const key of Object.keys(pages)) {

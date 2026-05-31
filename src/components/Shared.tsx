@@ -31,25 +31,13 @@ interface PoliticianAvatarProps {
 
 const getPerfectPoliticianImage = (name: string, photo_url?: string): string => {
   const url = photo_url?.trim() || "";
-  if (url !== "") {
+  const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
+  if (url !== "" && !STOCK_UNSPLASH_PATTERN.test(url)) {
     return url;
   }
 
-  // Premium fallback portraits instead of ui-avatars with initials (RO, KM, etc)
-  const fallbackPortraits = [
-    "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256&h=256&q=80",
-    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&h=256&q=80",
-    "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&h=256&q=80",
-    "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&h=256&q=80",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80",
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&h=256&q=80"
-  ];
-
-  let sum = 0;
-  for (let i = 0; i < name.length; i++) {
-    sum += name.charCodeAt(i);
-  }
-  return fallbackPortraits[sum % fallbackPortraits.length];
+  // Premium, clean initials avatar based on real politician's name instead of random stock templates
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a1628&color=ffffff&size=256&bold=true`;
 };
 
 export const PoliticianAvatar: React.FC<PoliticianAvatarProps> = ({
@@ -92,20 +80,7 @@ export const PoliticianAvatar: React.FC<PoliticianAvatarProps> = ({
           src={safePhoto} 
           alt={name} 
           onError={(e) => {
-            const fallbackPortraits = [
-              "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256&h=256&q=80",
-              "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&h=256&q=80",
-              "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&h=256&q=80",
-              "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&h=256&q=80",
-              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80",
-              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&h=256&q=80"
-            ];
-            let sum = 0;
-            for (let i = 0; i < name.length; i++) {
-              sum += name.charCodeAt(i);
-            }
-            const fallback = fallbackPortraits[sum % fallbackPortraits.length];
-            (e.target as HTMLImageElement).src = fallback;
+            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a1628&color=ffffff&size=256&bold=true`;
           }}
           className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
@@ -489,20 +464,7 @@ export const PollCard: React.FC<PollCardProps> = ({
                     src={getPerfectPoliticianImage(opt.label, opt.photo_url)} 
                     alt={opt.label} 
                     onError={(e) => {
-                      const fallbackPortraits = [
-                        "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256&h=256&q=80",
-                        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&h=256&q=80",
-                        "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&h=256&q=80",
-                        "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&h=256&q=80",
-                        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80",
-                        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&h=256&q=80"
-                      ];
-                      let sum = 0;
-                      for (let i = 0; i < opt.label.length; i++) {
-                        sum += opt.label.charCodeAt(i);
-                      }
-                      const fallback = fallbackPortraits[sum % fallbackPortraits.length];
-                      (e.target as HTMLImageElement).src = fallback;
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(opt.label)}&background=0a1628&color=ffffff&size=256&bold=true`;
                     }}
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer"
