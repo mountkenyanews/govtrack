@@ -24,7 +24,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     { label: "Elections Tracker", path: "/elections" },
     { label: "Policy Debates", path: "/policy" },
     { label: "News & Insights", path: "/news" },
-    { label: "Analytics Hub", path: "/results" }
+    { label: "Analytics Hub", path: "/results" },
+    { label: "Data Privacy & Compliance", path: "/privacy" }
   ];
 
   return (
@@ -137,9 +138,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             Disclaimer: GovTrack is a public civic polling and opinion mapping index. We are not associated with, sponsored by, or linked to any government organization, electoral committee, or political affiliation. Votes are fully encrypted, aggregated anonymously, and verified cleanly.
           </p>
 
-          <p className="text-xs text-slate-400 pt-1">
-            &copy; {currentYear} GovTrack. Designed for democracy. All rights reserved.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-400 pt-1">
+            <span>&copy; {currentYear} GovTrack. Designed for democracy. All rights reserved.</span>
+            <span className="hidden sm:inline text-slate-600">|</span>
+            <button 
+              onClick={() => onNavigate("/privacy")}
+              className="font-semibold text-[#F5A623] hover:text-white transition-colors underline decoration-slate-600 hover:decoration-white cursor-pointer"
+            >
+              Data Privacy Policy (Act, 2019)
+            </button>
+          </div>
         </div>
       </div>
     </footer>

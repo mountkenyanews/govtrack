@@ -24,6 +24,7 @@ import { NewsView } from "./pages/NewsView";
 import { AboutView } from "./pages/AboutView";
 import { HowItWorksView } from "./pages/HowItWorksView";
 import { LoginRegisterView } from "./pages/LoginRegisterView";
+import { PrivacyView } from "./pages/PrivacyView";
 
 import { getSavedUser } from "./utils/api";
 
@@ -106,6 +107,8 @@ export default function App() {
         return <AboutView />;
       case "/how-it-works":
         return <HowItWorksView />;
+      case "/privacy":
+        return <PrivacyView />;
       case "/login":
         return <LoginRegisterView onNavigate={handleNavigate} />;
       default:
