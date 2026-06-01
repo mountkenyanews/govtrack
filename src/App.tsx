@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigation } from "./components/Navigation";
 import { Footer } from "./components/Footer";
+import { Info } from "lucide-react";
 
 // All Pages
 import { HomeView } from "./pages/HomeView";
@@ -34,6 +35,23 @@ export default function App() {
     if (!hash) return "/";
     return hash.replace("#", "") || "/";
   });
+
+  const [showConsent, setShowConsent] = useState<boolean>(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem("govtrack_consent_choice");
+    if (!consent) {
+      const timer = setTimeout(() => {
+        setShowConsent(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleConsentChoice = (choice: "accepted" | "denied") => {
+    localStorage.setItem("govtrack_consent_choice", choice);
+    setShowConsent(false);
+  };
 
   const handleNavigate = (path: string) => {
     window.history.pushState(null, "", `#${path}`);
@@ -145,6 +163,53 @@ export default function App() {
       </main>
 
       <Footer onNavigate={handleNavigate} />
+
+      {/* Floating Cookies & Privacy Consent Banner */}
+      {showConsent && (
+        <div className="fixed bottom-6 left-6 right-6 md:left-auto md:max-w-md z-50 transition-all duration-500 ease-out transform translate-y-0 opacity-100">
+          <div className="bg-slate-950/95 backdrop-blur-md border border-slate-800 text-white rounded-2xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-[#F5A623]/10 text-[#F5A623] rounded-lg mt-0.5 shrink-0">
+                <Info className="w-5 h-5" />
+              </div>
+              <div className="space-y-1 text-left">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-white font-mono">
+                  Data Consent & Terms Agreement
+                </h4>
+                <p className="text-[11px] text-slate-450 leading-relaxed">
+                  We use cookies and temporary IP hashes to secure voting outcomes and comply with the <strong>Kenya Data Protection Act, 2019</strong>. By continuing or accepting, you agree to our terms.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <button
+                onClick={() => {
+                  handleNavigate("/privacy");
+                }}
+                className="text-[10px] text-slate-400 hover:text-white underline font-semibold transition cursor-pointer"
+              >
+                Read Privacy Policy
+              </button>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleConsentChoice("denied")}
+                  className="px-3.5 py-1.5 rounded text-[10px] font-semibold border border-slate-800 hover:border-slate-600 text-slate-400 hover:text-white transition cursor-pointer"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => handleConsentChoice("accepted")}
+                  className="px-3.5 py-1.5 rounded text-[10px] font-bold bg-[#F5A623] hover:bg-white text-[#0A1628] transition cursor-pointer shadow-sm"
+                >
+                  Accept & Agree
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
