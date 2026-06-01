@@ -259,26 +259,77 @@ export const api = {
     });
   },
 
-  // Custom File Uploader helper - converts files to Base64 in UI and transmits safely
+  // Custom File Uploader helper - converts files to Base64 in UI, compresses using canvas, and transmits safely
   async uploadFile(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
+      // If it's not an image, upload directly
+      if (!file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+          try {
+            const res = await apiFetch("/api/upload", {
+              method: "POST",
+              body: JSON.stringify({
+                fileName: file.name,
+                fileContent: reader.result,
+              }),
+            });
+            resolve(res.url);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = error => reject(error);
+        return;
+      }
+
+      // Image compression using Canvas
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = async () => {
-        try {
-          const res = await apiFetch("/api/upload", {
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+          }
+
+          // Compress to JPEG at 0.7 quality to keep size tiny (under 50KB)
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
+          apiFetch("/api/upload", {
             method: "POST",
             body: JSON.stringify({
-              fileName: file.name,
-              fileContent: reader.result,
+              fileName: file.name.replace(/\.[^/.]+$/, "") + ".jpg", // convert extension to jpg
+              fileContent: dataUrl,
             }),
-          });
-          resolve(res.url);
-        } catch (err) {
-          reject(err);
-        }
+          })
+            .then((res) => resolve(res.url))
+            .catch((err) => reject(err));
+        };
+        img.onerror = (err) => reject(new Error("Failed to load image for compression."));
       };
-      reader.onerror = error => reject(error);
+      reader.onerror = (err) => reject(err);
     });
   },
 
