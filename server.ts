@@ -26,7 +26,11 @@ if (databaseUrl) {
       connectionString: cleanUrl,
       ssl: {
         rejectUnauthorized: false // Required for Aiven SSL connections
-      }
+      },
+      // Serverless connection optimizations to prevent "remaining connection slots" exhaustion errors on Aiven
+      max: process.env.VERCEL ? 1 : 2,     // Limit per container: 1 on Vercel, 2 on local dev
+      idleTimeoutMillis: 1000,              // Close idle connections after 1 second to release slots instantly
+      connectionTimeoutMillis: 5000         // Fail fast if database slots are exhausted
     });
     console.log("[Postgres] Successfully initialized PostgreSQL connection pool.");
   } catch (err) {
