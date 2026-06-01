@@ -87,8 +87,9 @@ try {
 const databaseUrl = process.env.DATABASE_URL;
 if (databaseUrl) {
   try {
+    const cleanUrl = databaseUrl.replace(/[?&]sslmode=require/i, "");
     pgPool = new Pool({
-      connectionString: databaseUrl,
+      connectionString: cleanUrl,
       ssl: {
         rejectUnauthorized: false // Required for Aiven SSL connections
       }
