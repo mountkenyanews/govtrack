@@ -2822,21 +2822,21 @@ app.post("/api/admin/party/autofill", async (req, res) => {
       "chairperson": "Chairperson/Leader name (string)"
     }`;
 
-    const [wikiLogoUrl, generated] = await Promise.all([
-      getWikipediaImageUrl(name + " political party logo emblem seal"),
+    const [partyLogoUrl, generated] = await Promise.all([
+      getPartyLogoUrl(name),
       generateAIContent(
-        `Provide accurate details for the political party named "${name}". Use real information.`,
+        `Provide accurate details for the political party named "${name}". Use real factual information including correct founded year, official headquarters, current leader/chairperson, and accurate political ideology.`,
         schemaDescription,
         {
           model: "gemini-3.5-flash",
-          contents: `Provide accurate details for the political party named "${name}". Use real information.`,
+          contents: `Provide accurate details for the political party named "${name}". Use real factual information including correct founded year, official headquarters, current leader/chairperson, and accurate political ideology.`,
           config: fallbackConfig
         }
       )
     ]);
 
-    if (wikiLogoUrl) {
-      generated.logo_url = wikiLogoUrl;
+    if (partyLogoUrl) {
+      generated.logo_url = partyLogoUrl;
     } else {
       generated.logo_url = `https://ui-avatars.com/api/?name=${encodeURIComponent(generated.abbreviation || name)}&background=${(generated.color || "#3b82f6").replace("#", "")}&color=ffffff&bold=true&size=128`;
     }
@@ -2874,6 +2874,115 @@ async function getWikipediaImageUrl(name: string): Promise<string> {
   } catch (err) {
     console.error("Wikipedia image resolution error for name " + name + ":", err);
   }
+  return "";
+}
+
+// Dedicated helper to fetch a political party's real logo from Wikipedia/Wikimedia Commons
+// Strategy 1: Search Wikimedia Commons for the party logo file directly
+// Strategy 2: Fetch the party's Wikipedia article and extract the infobox logo image
+// Strategy 3: Try searching with the party's known abbreviation or alternative name
+async function getPartyLogoUrl(partyName: string): Promise<string> {
+  const headers = { "User-Agent": "GovTrackApp/1.0 (contact@govtrack.co.ke)" };
+
+  // Strategy 1: Search Wikimedia Commons for the logo directly
+  try {
+    const queries = [
+      `${partyName} logo`,
+      `${partyName} party logo`,
+      `${partyName} emblem`,
+      `${partyName} political party`
+    ];
+    for (const query of queries) {
+      const commonsSearchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srnamespace=6&srlimit=3&format=json&origin=*`;
+      const commonsRes = await fetch(commonsSearchUrl, { headers });
+      const commonsData = await commonsRes.json() as any;
+      const fileResults: any[] = commonsData?.query?.search || [];
+      for (const file of fileResults) {
+        // Prefer SVG or PNG logos, skip photos of people
+        const title: string = file.title || "";
+        const lowerTitle = title.toLowerCase();
+        const isLogo = lowerTitle.includes("logo") || lowerTitle.includes("emblem") || lowerTitle.includes("seal") || lowerTitle.includes("flag");
+        const isImage = title.startsWith("File:") && (lowerTitle.endsWith(".svg") || lowerTitle.endsWith(".png") || lowerTitle.endsWith(".jpg") || lowerTitle.endsWith(".jpeg"));
+        if (isImage && isLogo) {
+          // Get direct image URL from Commons
+          const fileName = title.replace(/^File:/, "");
+          const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url&iiurlwidth=200&format=json&origin=*`;
+          const infoRes = await fetch(infoUrl, { headers });
+          const infoData = await infoRes.json() as any;
+          const infoPages = infoData?.query?.pages || {};
+          for (const key of Object.keys(infoPages)) {
+            const thumbUrl = infoPages[key]?.imageinfo?.[0]?.thumburl;
+            const directUrl = infoPages[key]?.imageinfo?.[0]?.url;
+            if (thumbUrl) {
+              console.log(`[Party Logo] Found logo for "${partyName}" via Commons: ${thumbUrl.substring(0, 80)}`);
+              return thumbUrl;
+            }
+            if (directUrl) {
+              console.log(`[Party Logo] Found logo for "${partyName}" via Commons (direct): ${directUrl.substring(0, 80)}`);
+              return directUrl;
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[Party Logo] Commons search failed for "${partyName}":`, err);
+  }
+
+  // Strategy 2: Fetch the party's Wikipedia article and get its primary image (infobox logo)
+  try {
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(partyName + " political party")}&srlimit=1&format=json&origin=*`;
+    const searchRes = await fetch(searchUrl, { headers });
+    const searchData = await searchRes.json() as any;
+    const title = searchData?.query?.search?.[0]?.title;
+    if (title) {
+      // Get all images from the article and find the one most likely to be the logo
+      const imagesUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=images&titles=${encodeURIComponent(title)}&imlimit=20&format=json&origin=*&redirects=1`;
+      const imagesRes = await fetch(imagesUrl, { headers });
+      const imagesData = await imagesRes.json() as any;
+      const pages = imagesData?.query?.pages || {};
+      
+      for (const pageKey of Object.keys(pages)) {
+        const images: any[] = pages[pageKey]?.images || [];
+        // First pass: find logo/emblem/flag files
+        for (const img of images) {
+          const imgTitle: string = img.title || "";
+          const lowerImg = imgTitle.toLowerCase();
+          if (lowerImg.includes("logo") || lowerImg.includes("emblem") || lowerImg.includes("seal")) {
+            const infoUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(imgTitle)}&prop=imageinfo&iiprop=url&iiurlwidth=200&format=json&origin=*`;
+            const infoRes = await fetch(infoUrl, { headers });
+            const infoData = await infoRes.json() as any;
+            const infoPages = infoData?.query?.pages || {};
+            for (const key of Object.keys(infoPages)) {
+              const thumbUrl = infoPages[key]?.imageinfo?.[0]?.thumburl;
+              const directUrl = infoPages[key]?.imageinfo?.[0]?.url;
+              if (thumbUrl) {
+                console.log(`[Party Logo] Found logo for "${partyName}" via Wikipedia article images: ${thumbUrl.substring(0, 80)}`);
+                return thumbUrl;
+              }
+              if (directUrl) return directUrl;
+            }
+          }
+        }
+        // Second pass: fall back to the article's primary page image (usually the logo in infobox)
+        const pageImgUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail|original&pithumbsize=200&titles=${encodeURIComponent(title)}&redirects=1&origin=*`;
+        const pageImgRes = await fetch(pageImgUrl, { headers });
+        const pageImgData = await pageImgRes.json() as any;
+        const piPages = pageImgData?.query?.pages || {};
+        for (const key of Object.keys(piPages)) {
+          const thumbUrl = piPages[key]?.thumbnail?.source;
+          if (thumbUrl) {
+            console.log(`[Party Logo] Found page image for "${partyName}" via Wikipedia pageimages: ${thumbUrl.substring(0, 80)}`);
+            return thumbUrl;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[Party Logo] Wikipedia article search failed for "${partyName}":`, err);
+  }
+
+  console.log(`[Party Logo] No logo found for "${partyName}", will use generated avatar.`);
   return "";
 }
 
