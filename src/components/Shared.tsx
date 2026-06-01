@@ -13,6 +13,7 @@ import {
   CheckCircle, 
   Share2, 
   Twitter, 
+  Facebook,
   ExternalLink,
   ChevronRight,
   TrendingUp,
@@ -358,7 +359,16 @@ interface ShareButtonsProps {
 export const ShareButtons: React.FC<ShareButtonsProps> = ({ url, title }) => {
   const [copied, setCopied] = useState(false);
 
-  const fullUrl = `${window.location.origin}${url}`;
+  // Map SPA client-side hash routes to server-side share handlers so crawlers/scrapers (Facebook, WhatsApp)
+  // receive real Open Graph meta tags and dynamic preview images.
+  let sharePath = url;
+  if (url.startsWith("/polls/")) {
+    sharePath = url.replace("/polls/", "/api/share/poll/");
+  } else if (url.startsWith("/news/")) {
+    sharePath = url.replace("/news/", "/api/share/news/");
+  }
+
+  const fullUrl = `${window.location.origin}${sharePath}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(fullUrl);
@@ -376,6 +386,10 @@ export const ShareButtons: React.FC<ShareButtonsProps> = ({ url, title }) => {
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
   };
 
+  const handleFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`, "_blank");
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button 
@@ -391,7 +405,15 @@ export const ShareButtons: React.FC<ShareButtonsProps> = ({ url, title }) => {
         className="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-semibold px-2.5 py-1.5 rounded-md transition-colors"
       >
         <Twitter className="w-3.5 h-3.5" />
-        Share
+        X / Twitter
+      </button>
+
+      <button 
+        onClick={handleFacebook}
+        className="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold px-2.5 py-1.5 rounded-md transition-colors"
+      >
+        <Facebook className="w-3.5 h-3.5" />
+        Facebook
       </button>
 
       <button 

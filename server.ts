@@ -3420,6 +3420,318 @@ app.post("/api/admin/news", async (req, res) => {
   res.status(201).json(newNews);
 });
 
+// Update a poll's pre-rendered social sharing preview image (called by client off-screen canvas generator)
+app.post("/api/polls/:id/featured-image", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { featured_image } = req.body;
+  if (!featured_image) {
+    return res.status(400).json({ error: "featured_image content is required." });
+  }
+
+  const poll = DB.polls.find(p => p.id === id);
+  if (poll) {
+    poll.featured_image = featured_image;
+    await saveDatabase();
+    console.log(`[Poll Share] Saved pre-rendered sharing banner for poll ID ${id}`);
+    return res.json({ success: true, poll });
+  }
+  res.status(404).json({ error: "Poll not found" });
+});
+
+// Server-side social share landing for Polls (serves custom SEO Open Graph meta tags, then redirects to SPA)
+app.get("/api/share/poll/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await getDatabaseLoadedPromise().catch(() => {});
+  const poll = DB.polls.find(p => p.id === id);
+
+  if (!poll) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>GovTrack Kenya - Poll Not Found</title>
+        <meta http-equiv="refresh" content="0; url=https://govtrack-five.vercel.app/#/polls">
+        <script>window.location.href = "https://govtrack-five.vercel.app/#/polls";</script>
+      </head>
+      <body>
+        <p>Redirecting to GovTrack Kenya Polls...</p>
+      </body>
+      </html>
+    `);
+  }
+
+  const title = `🗳️ Vote: ${poll.title}`;
+  const desc = poll.description || "Cast your official ballot opinion and track live election stats and governance metrics on GovTrack Kenya.";
+  const host = req.get('host') || 'govtrack-five.vercel.app';
+  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const baseUrl = `${protocol}://${host}`;
+  
+  const imageUrl = `${baseUrl}/api/share/image/poll/${poll.id}`;
+  const redirectUrl = `${baseUrl}/#/polls/${poll.id}`;
+
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>${title}</title>
+      
+      <!-- Open Graph / Facebook / WhatsApp -->
+      <meta property="og:type" content="website">
+      <meta property="og:url" content="${baseUrl}/api/share/poll/${poll.id}">
+      <meta property="og:title" content="${title}">
+      <meta property="og:description" content="${desc}">
+      <meta property="og:image" content="${imageUrl}">
+      <meta property="og:image:width" content="1200">
+      <meta property="og:image:height" content="630">
+      <meta property="og:image:type" content="image/png">
+      
+      <!-- Twitter -->
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:url" content="${baseUrl}/api/share/poll/${poll.id}">
+      <meta name="twitter:title" content="${title}">
+      <meta name="twitter:description" content="${desc}">
+      <meta name="twitter:image" content="${imageUrl}">
+      
+      <!-- Redirect real users to interactive SPA -->
+      <meta http-equiv="refresh" content="0; url=${redirectUrl}">
+      <script>
+        window.location.href = "${redirectUrl}";
+      </script>
+    </head>
+    <body>
+      <p>Redirecting you to GovTrack Kenya: "${poll.title}"...</p>
+    </body>
+    </html>
+  `);
+});
+
+// Returns the pre-rendered PNG image from the database OR renders a beautiful dynamic fallback SVG
+app.get("/api/share/image/poll/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await getDatabaseLoadedPromise().catch(() => {});
+  const poll = DB.polls.find(p => p.id === id);
+
+  if (poll && poll.featured_image && poll.featured_image.startsWith("data:image/")) {
+    try {
+      const matches = poll.featured_image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const contentType = matches[1];
+        const base64Data = matches[2];
+        const imgBuffer = Buffer.from(base64Data, "base64");
+        
+        res.setHeader("Content-Type", contentType);
+        res.setHeader("Cache-Control", "public, max-age=86400"); // 1 day cache
+        return res.send(imgBuffer);
+      }
+    } catch (err) {
+      console.error("Failed to parse poll share image base64:", err);
+    }
+  }
+
+  // Pure SVG fallback: zero serverless dependencies, extremely rich visual aesthetics
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.setHeader("Cache-Control", "public, max-age=120"); // short cache to allow generated image to take over
+  
+  const svgWidth = 1200;
+  const svgHeight = 630;
+  
+  let optionsSvg = "";
+  if (poll && poll.options && Array.isArray(poll.options)) {
+    const optionsToShow = poll.options.slice(0, 4);
+    const spacing = svgWidth / (optionsToShow.length + 1);
+    optionsToShow.forEach((opt, idx) => {
+      const cx = spacing * (idx + 1);
+      const cy = 440;
+      const name = opt.label;
+      const initials = name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+      const partyColor = opt.party_color || "#3b82f6";
+      
+      optionsSvg += `
+        <!-- Option ${idx + 1} -->
+        <g>
+          <circle cx="${cx}" cy="${cy}" r="75" fill="#1e293b" stroke="${partyColor}" stroke-width="6" />
+          <circle cx="${cx}" cy="${cy}" r="65" fill="${partyColor}" opacity="0.15" />
+          <text x="${cx}" y="${cy + 12}" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#ffffff" text-anchor="middle">${initials}</text>
+          <text x="${cx}" y="${cy + 110}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">${name.substring(0, 18)}</text>
+          <text x="${cx}" y="${cy + 135}" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="${partyColor}" text-anchor="middle">${opt.party || "Independent"}</text>
+        </g>
+      `;
+    });
+  }
+
+  const pollTitle = poll ? poll.title : "GovTrack Live Polls";
+  const pollCategory = poll ? poll.category.toUpperCase() : "OPINION POLL";
+  const cleanTitle = pollTitle.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const svgContent = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="100%" height="100%">
+      <defs>
+        <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0A1628" />
+          <stop offset="100%" stop-color="#1E293B" />
+        </linearGradient>
+      </defs>
+      
+      <rect width="${svgWidth}" height="${svgHeight}" fill="url(#bg-grad)" />
+      <circle cx="1100" cy="100" r="220" fill="#F5A623" opacity="0.04" />
+      <circle cx="100" cy="550" r="150" fill="#3b82f6" opacity="0.03" />
+      
+      <text x="70" y="85" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="900" fill="#F5A623" letter-spacing="1">🗳️ GOVTRACK KENYA</text>
+      <text x="70" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#3b82f6" letter-spacing="2">${pollCategory}</text>
+      
+      <foreignObject x="70" y="170" width="1060" height="150">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 40px; font-weight: 800; color: #ffffff; line-height: 1.35; max-height: 140px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+          ${cleanTitle}
+        </div>
+      </foreignObject>
+      
+      <line x1="70" y1="310" x2="1130" y2="310" stroke="#F5A623" stroke-width="2" opacity="0.3" />
+      ${optionsSvg}
+      <text x="1130" y="585" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#64748b" text-anchor="end">CITIZEN OPINION PORTAL • HTTPS://GOVTRACK.CO.KE</text>
+    </svg>
+  `;
+  
+  res.send(svgContent);
+});
+
+// Server-side social share landing for News Articles (serves custom Open Graph tags, then redirects to SPA)
+app.get("/api/share/news/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await getDatabaseLoadedPromise().catch(() => {});
+  const news = DB.newsItems.find(n => n.id === id);
+
+  if (!news) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>GovTrack Kenya - Article Not Found</title>
+        <meta http-equiv="refresh" content="0; url=https://govtrack-five.vercel.app/#/news">
+        <script>window.location.href = "https://govtrack-five.vercel.app/#/news";</script>
+      </head>
+      <body>
+        <p>Redirecting to GovTrack Kenya News...</p>
+      </body>
+      </html>
+    `);
+  }
+
+  const title = `📰 News: ${news.title}`;
+  const desc = news.summary ? news.summary.replace(/<[^>]*>/g, '').substring(0, 200) + '...' : "Read the latest legislative, electoral, and policy news tracking on GovTrack Kenya.";
+  const host = req.get('host') || 'govtrack-five.vercel.app';
+  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const baseUrl = `${protocol}://${host}`;
+  
+  const imageUrl = `${baseUrl}/api/share/image/news/${news.id}`;
+  const redirectUrl = `${baseUrl}/#/news/${news.id}`;
+
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>${title}</title>
+      
+      <!-- Open Graph / Facebook / WhatsApp -->
+      <meta property="og:type" content="article">
+      <meta property="og:url" content="${baseUrl}/api/share/news/${news.id}">
+      <meta property="og:title" content="${title}">
+      <meta property="og:description" content="${desc}">
+      <meta property="og:image" content="${imageUrl}">
+      <meta property="og:image:width" content="1200">
+      <meta property="og:image:height" content="630">
+      
+      <!-- Twitter -->
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:url" content="${baseUrl}/api/share/news/${news.id}">
+      <meta name="twitter:title" content="${title}">
+      <meta name="twitter:description" content="${desc}">
+      <meta name="twitter:image" content="${imageUrl}">
+      
+      <!-- Redirect real users to interactive SPA -->
+      <meta http-equiv="refresh" content="0; url=${redirectUrl}">
+      <script>
+        window.location.href = "${redirectUrl}";
+      </script>
+    </head>
+    <body>
+      <p>Redirecting you to GovTrack Kenya Article: "${news.title}"...</p>
+    </body>
+    </html>
+  `);
+});
+
+// Serves the news article image directly (proxied to prevent CORS errors or offline images)
+app.get("/api/share/image/news/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await getDatabaseLoadedPromise().catch(() => {});
+  const news = DB.newsItems.find(n => n.id === id);
+
+  if (news && news.image_url) {
+    try {
+      if (news.image_url.startsWith("data:image/")) {
+        const matches = news.image_url.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          res.setHeader("Content-Type", matches[1]);
+          res.setHeader("Cache-Control", "public, max-age=86400");
+          return res.send(Buffer.from(matches[2], "base64"));
+        }
+      }
+      
+      const fetchRes = await fetch(news.image_url);
+      const buffer = await fetchRes.arrayBuffer();
+      res.setHeader("Content-Type", fetchRes.headers.get("content-type") || "image/jpeg");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return res.send(Buffer.from(buffer));
+    } catch (err) {
+      console.error("Failed to proxy news share image:", err);
+    }
+  }
+
+  // Fallback: A beautiful dynamic SVG for news articles
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.setHeader("Cache-Control", "public, max-age=120");
+  
+  const svgWidth = 1200;
+  const svgHeight = 630;
+  const articleTitle = news ? news.title : "GovTrack News Update";
+  const articleSource = news ? news.source_name : "GovTrack Editorial";
+  const cleanTitle = articleTitle.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  
+  const svgContent = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="100%" height="100%">
+      <defs>
+        <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0A1628" />
+          <stop offset="100%" stop-color="#0F172A" />
+        </linearGradient>
+      </defs>
+      
+      <rect width="${svgWidth}" height="${svgHeight}" fill="url(#bg-grad)" />
+      <circle cx="1000" cy="500" r="300" fill="#3b82f6" opacity="0.05" />
+      <path d="M -100,200 L 400,-100 L 200,600 Z" fill="#F5A623" opacity="0.02" />
+      
+      <text x="80" y="95" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#F5A623" letter-spacing="1">📰 GOVTRACK KENYA NEWS</text>
+      <text x="80" y="135" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#3b82f6" letter-spacing="2">BREAKING LEGISLATIVE UPDATE</text>
+      <rect x="80" y="160" width="80" height="8" fill="#F5A623" rx="4" />
+      
+      <foreignObject x="80" y="200" width="1040" height="240">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: system-ui, -apple-system, sans-serif; font-size: 52px; font-weight: 800; color: #ffffff; line-height: 1.25; max-height: 220px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+          ${cleanTitle}
+        </div>
+      </foreignObject>
+      
+      <line x1="80" y1="470" x2="1120" y2="470" stroke="#F5A623" stroke-width="2" opacity="0.2" />
+      <text x="80" y="530" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#94a3b8">Source: ${articleSource}</text>
+      <text x="80" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#64748b">Verified electoral report, live and interactive.</text>
+      <text x="1120" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#F5A623" text-anchor="end">READ ARTICLE ON GOVTRACK.CO.KE →</text>
+    </svg>
+  `;
+  
+  res.send(svgContent);
+});
+
 
 // Serve Vite or Static files depending on environment
 async function startServer() {

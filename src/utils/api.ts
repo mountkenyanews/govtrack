@@ -259,6 +259,13 @@ export const api = {
     });
   },
 
+  async uploadPollFeaturedImage(pollId: number, base64Image: string): Promise<any> {
+    return apiFetch(`/api/polls/${pollId}/featured-image`, {
+      method: "POST",
+      body: JSON.stringify({ featured_image: base64Image }),
+    });
+  },
+
   // Custom File Uploader helper - converts files to Base64 in UI, compresses using canvas, and transmits safely
   async uploadFile(file: File): Promise<string> {
     return new Promise((resolve, reject) => {

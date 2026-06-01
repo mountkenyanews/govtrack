@@ -52,6 +52,181 @@ export const PollDetailView: React.FC<PollDetailViewProps> = ({ pollId, onNaviga
 
   const [manualRefreshing, setManualRefreshing] = useState(false);
 
+  // Helper to dynamically pre-render a premium social sharing banner for this poll
+  // Features: deep dark gradient, wrapped poll title, and circular framed portraits of the candidates
+  const generateAndUploadShareImage = async (p: Poll) => {
+    if (p.featured_image && p.featured_image.startsWith("data:image/")) {
+      return; // Already generated
+    }
+
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1200;
+      canvas.height = 630;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // 1. Draw premium background gradient
+      const grad = ctx.createLinearGradient(0, 0, 1200, 630);
+      grad.addColorStop(0, "#0A1628");
+      grad.addColorStop(1, "#1E293B");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1200, 630);
+
+      // Decorative glows
+      ctx.fillStyle = "rgba(245, 166, 35, 0.04)";
+      ctx.beginPath();
+      ctx.arc(1100, 100, 220, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(59, 130, 246, 0.03)";
+      ctx.beginPath();
+      ctx.arc(100, 550, 150, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Branding Header
+      ctx.fillStyle = "#F5A623";
+      ctx.font = "900 28px system-ui, -apple-system, sans-serif";
+      ctx.fillText("🗳️ GOVTRACK KENYA", 70, 85);
+
+      ctx.fillStyle = "#3b82f6";
+      ctx.font = "bold 16px system-ui, -apple-system, sans-serif";
+      ctx.fillText(p.category.toUpperCase(), 70, 130);
+
+      // Gold line separator
+      ctx.strokeStyle = "rgba(245, 166, 35, 0.3)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(70, 310);
+      ctx.lineTo(1130, 310);
+      ctx.stroke();
+
+      // 3. Footer Branding
+      ctx.fillStyle = "#64748b";
+      ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("CITIZEN OPINION PORTAL • HTTPS://GOVTRACK.CO.KE", 1130, 585);
+      ctx.textAlign = "left"; // reset alignment
+
+      // 4. Poll Title word wrap
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 40px system-ui, -apple-system, sans-serif";
+      const words = p.title.split(" ");
+      let line = "";
+      let y = 185;
+      const maxWidth = 1060;
+      const lineHeight = 52;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          ctx.fillText(line, 70, y);
+          line = words[n] + " ";
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, 70, y);
+
+      // 5. Draw candidates circular framed portraits arranged horizontally
+      const optionsToShow = p.options.slice(0, 4);
+      const spacing = 1200 / (optionsToShow.length + 1);
+
+      const loadAndDrawOption = async (opt: PollOption, idx: number) => {
+        const cx = spacing * (idx + 1);
+        const cy = 440;
+        const partyColor = opt.party_color || "#3b82f6";
+
+        // Draw outer ring
+        ctx.strokeStyle = partyColor;
+        ctx.lineWidth = 6;
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 75, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Bypasses CORS using the server-side image proxy
+        const proxyUrl = opt.photo_url 
+          ? `/api/proxy-image?url=${encodeURIComponent(opt.photo_url)}` 
+          : "";
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+
+        const loaded = new Promise<boolean>((resolve) => {
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+        });
+
+        if (proxyUrl) {
+          img.src = proxyUrl;
+        }
+
+        const success = proxyUrl ? await loaded : false;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 72, 0, Math.PI * 2);
+        ctx.clip();
+
+        if (success) {
+          const aspect = img.width / img.height;
+          let dw, dh, dx, dy;
+          if (aspect >= 1) {
+            dh = 144;
+            dw = 144 * aspect;
+            dx = cx - dw / 2;
+            dy = cy - dh / 2;
+          } else {
+            dw = 144;
+            dh = 144 / aspect;
+            dx = cx - dw / 2;
+            dy = cy - dh / 2;
+          }
+          ctx.drawImage(img, dx, dy, dw, dh);
+        } else {
+          // Draw nice colored initials fallback
+          ctx.fillStyle = partyColor;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 72, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 36px system-ui, -apple-system, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const initials = opt.label.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+          ctx.fillText(initials, cx, cy);
+        }
+        ctx.restore();
+
+        // Draw name & party label below
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 20px system-ui, -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(opt.label.substring(0, 18), cx, cy + 110);
+
+        ctx.fillStyle = partyColor;
+        ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
+        ctx.fillText(opt.party || "Independent", cx, cy + 135);
+      };
+
+      for (let i = 0; i < optionsToShow.length; i++) {
+        await loadAndDrawOption(optionsToShow[i], i);
+      }
+
+      // Convert and upload
+      const base64Data = canvas.toDataURL("image/png");
+      await api.uploadPollFeaturedImage(p.id, base64Data);
+      console.log(`[Poll Share] Pre-rendered share image successfully uploaded for poll ${p.id}`);
+    } catch (err) {
+      console.error("[Poll Share] Error pre-rendering share image:", err);
+    }
+  };
+
   // Load basic details
   const fetchInitialDetails = async (showLoadingIndicator = true) => {
     try {
@@ -59,6 +234,13 @@ export const PollDetailView: React.FC<PollDetailViewProps> = ({ pollId, onNaviga
       // Load poll details
       const details = await api.getPoll(pollId);
       setPoll(details);
+
+      // Trigger social sharing banner pre-render in the background
+      if (details) {
+        setTimeout(() => {
+          generateAndUploadShareImage(details).catch(() => {});
+        }, 1200);
+      }
 
       // Load votes list check
       const votedCheck = await api.getUserVotedState(pollId, currentUser?.id);

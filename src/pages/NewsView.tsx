@@ -27,7 +27,7 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
-import { PoliticianAvatar, VoteProgressBar, getProxiedImageUrl } from "../components/Shared";
+import { PoliticianAvatar, VoteProgressBar, getProxiedImageUrl, ShareButtons } from "../components/Shared";
 import { formatArticleContent, stripHtmlTags } from "../utils/richText";
 
 interface NewsViewProps {
@@ -289,6 +289,15 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
                 ))}
               </div>
             )}
+
+            {/* Social widget share cards */}
+            <div className="mt-8 bg-slate-50/50 p-4 rounded-xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-left space-y-0.5">
+                <h4 className="font-extrabold text-[#0A1628] text-xs font-sans">Share this News Report</h4>
+                <p className="text-[10px] text-slate-500 font-sans">Broaden discussion around this legislative reporting.</p>
+              </div>
+              <ShareButtons url={`/news/${activeArticle.id}`} title={activeArticle.title} />
+            </div>
           </div>
         </article>
 
@@ -755,6 +764,15 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
                       ))}
                     </div>
                   )}
+
+                  {/* Social widget share cards */}
+                  <div className="mt-6 bg-slate-50/50 p-3 rounded-xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-3">
+                    <div className="text-left space-y-0.5">
+                      <h4 className="font-extrabold text-[#0A1628] text-xs font-sans">Share this News Report</h4>
+                      <p className="text-[10px] text-slate-500 font-sans font-medium">Help expand the debate around this article.</p>
+                    </div>
+                    <ShareButtons url={`/news/${activeArticle.id}`} title={activeArticle.title} />
+                  </div>
                 </div>
 
                 {/* RIGHT BLOCK: THE ATTACHED BALLOT WIDGET PANEL */}
