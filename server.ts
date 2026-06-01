@@ -15,76 +15,10 @@ const { Pool } = pg;
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, Poll, PollOption, Vote, Politician, Comment, NewsItem, PlatformStats, AppNotification, DevelopmentProgress } from "./src/types";
 
-// Firebase Integration
-import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
-
-let firebaseConfig: any = null;
-
-if (process.env.FIREBASE_CONFIG) {
-  try {
-    firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-    console.log("[Firebase] Successfully loaded config from FIREBASE_CONFIG environment variable.");
-  } catch (err: any) {
-    console.error("[Firebase] Failed to parse FIREBASE_CONFIG. Falling back.", err);
-  }
-}
-
-if (!firebaseConfig && process.env.FIREBASE_PROJECT_ID) {
-  firebaseConfig = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    apiKey: process.env.FIREBASE_API_KEY,
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-    appId: process.env.FIREBASE_APP_ID,
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-    firestoreDatabaseId: process.env.FIREBASE_FIRESTORE_DATABASE_ID || "(default)"
-  };
-  console.log("[Firebase] Loaded config from individual environment variables.");
-}
-
-if (!firebaseConfig) {
-  try {
-    const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-    if (fs.existsSync(configPath)) {
-      firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-      console.log("[Firebase] Loaded config from local firebase-applet-config.json file.");
-    }
-  } catch (err) {
-    console.warn("[Firebase] Local firebase-applet-config.json load error.", err);
-  }
-}
-
-// Fallback to hardcoded production applet credentials if still not loaded (ensuring zero-config serverless works out-of-the-box!)
-if (!firebaseConfig || !firebaseConfig.projectId) {
-  firebaseConfig = {
-    projectId: "idyllic-art-v8gvj",
-    appId: "1:568813002354:web:f036c352fe8e956caf6ceb",
-    apiKey: "AIzaSyClW2YAS3lEyEr6P_NagV_hef9V_KYnGhI",
-    authDomain: "idyllic-art-v8gvj.firebaseapp.com",
-    firestoreDatabaseId: "ai-studio-f1130241-c3c4-434f-b90e-aa93968a3f50",
-    storageBucket: "idyllic-art-v8gvj.firebasestorage.app",
-    messagingSenderId: "568813002354"
-  };
-  console.log("[Firebase] Loaded default production applet credentials fallback.");
-}
-
-let firebaseApp: any = null;
-let storage: any = null;
-let pgPool: pg.Pool | null = null;
-
-try {
-  // Prevent duplicate Firebase app initialization (important for hot-reload dev)
-  firebaseApp = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-  storage = getStorage(firebaseApp);
-  console.log("[Firebase] Successfully initialized Firebase Services (Storage only).");
-} catch (err) {
-  console.error("[Firebase] Fatal initialization error: ", err);
-}
-
 // Initialize Aiven PostgreSQL Connection Pool
 const databaseUrl = process.env.DATABASE_URL;
+let pgPool: pg.Pool | null = null;
+
 if (databaseUrl) {
   try {
     const cleanUrl = databaseUrl.replace(/[?&]sslmode=require/i, "");
@@ -2151,26 +2085,16 @@ app.post("/api/polls/create", async (req, res) => {
   res.status(201).json({ poll: newPoll });
 });
 
-// 9. BASE44 PROFILE PHOTO FILE UPLOAD PROXY (saving base64 inside JSON file)
+// 9. BASE64 PROFILE PHOTO FILE UPLOAD PROXY (saving base64 inside database state)
 app.post("/api/upload", async (req, res) => {
   const { fileName, fileContent } = req.body; // base64 payload
   if (!fileContent) {
     return res.status(400).json({ error: "No file content supplied." });
   }
 
-  try {
-    const fileId = Date.now().toString() + "-" + fileName;
-    const fileRef = storageRef(storage, "uploads/" + fileId);
-    
-    await uploadString(fileRef, fileContent, 'data_url');
-    const downloadUrl = await getDownloadURL(fileRef);
-    
-    res.json({ url: downloadUrl });
-  } catch (err) {
-    console.error("Storage upload failed", err);
-    // Fallback to base64 if storage fails
-    res.json({ url: fileContent });
-  }
+  // Returning the compressed Base64 string directly.
+  // Aiven PostgreSQL JSONB supports up to 1GB per record, so this persists perfectly inside the DB state.
+  res.json({ url: fileContent });
 });
 
 // 10. SYSTEM ANALYTICS & ADMIN API
