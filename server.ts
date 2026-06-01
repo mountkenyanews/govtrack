@@ -9,6 +9,8 @@ dotenv.config();
 import express from "express";
 import path from "path";
 import fs from "fs";
+import pg from "pg";
+const { Pool } = pg;
 // Vite is imported dynamically in dev mode only (see startServer)
 import { GoogleGenAI, Type } from "@google/genai";
 import { User, Poll, PollOption, Vote, Politician, Comment, NewsItem, PlatformStats, AppNotification, DevelopmentProgress } from "./src/types";
@@ -69,18 +71,34 @@ if (!firebaseConfig || !firebaseConfig.projectId) {
 }
 
 let firebaseApp: any = null;
-let db: any = null;
 let storage: any = null;
+let pgPool: pg.Pool | null = null;
 
 try {
   // Prevent duplicate Firebase app initialization (important for hot-reload dev)
   firebaseApp = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-  db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || "(default)");
   storage = getStorage(firebaseApp);
-  console.log("[Firebase] Successfully initialized Firebase Services.");
-  console.log(`[Firebase] Using Firestore DB: ${firebaseConfig.firestoreDatabaseId || "(default)"}, Storage: ${firebaseConfig.storageBucket}`);
+  console.log("[Firebase] Successfully initialized Firebase Services (Storage only).");
 } catch (err) {
   console.error("[Firebase] Fatal initialization error: ", err);
+}
+
+// Initialize Aiven PostgreSQL Connection Pool
+const databaseUrl = process.env.DATABASE_URL;
+if (databaseUrl) {
+  try {
+    pgPool = new Pool({
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false // Required for Aiven SSL connections
+      }
+    });
+    console.log("[Postgres] Successfully initialized PostgreSQL connection pool.");
+  } catch (err) {
+    console.error("[Postgres] Failed to initialize connection pool:", err);
+  }
+} else {
+  console.warn("[Postgres] DATABASE_URL environment variable is not defined. PostgreSQL persistence is unavailable.");
 }
 
 const app = express();
@@ -1025,60 +1043,67 @@ const SERVER_DB_DOC_ID = "master_db";
 const SERVER_SECRET = "govtrack_secret_key_12345678901234567890123456789012345678901234";
 
 async function loadDatabase() {
-  if (!db) {
-    console.error("[DB] Firestore not initialized — falling back to seed data.");
+  if (!pgPool) {
+    console.error("[DB] PostgreSQL connection pool not initialized — falling back to seed data.");
     seedInitialData();
     return;
   }
   try {
-    const docRef = doc(db, "server_db", SERVER_DB_DOC_ID);
-    const docSnap = await getDoc(docRef);
+    // 1. Create table if it doesn't exist
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS platform_state (
+        id INT PRIMARY KEY DEFAULT 1,
+        payload JSONB,
+        saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (data && data.payload) {
-        DB = JSON.parse(data.payload);
-        if (!DB.notifications) {
-          DB.notifications = [];
-        }
-        if (!DB.developments) {
-          DB.developments = [];
-        }
-        if (!DB.parties) {
-          DB.parties = [];
-        }
-        if (!DB.settings) {
-          DB.settings = {
-            hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
-          };
-        }
-        if (DB.politicians && Array.isArray(DB.politicians)) {
-          DB.politicians.forEach(pol => {
-            if (pol.party) {
-              ensurePartyExists(pol.party, pol.party_color || "#3b82f6", pol.country);
-            }
-          });
-        }
-
-        syncPollOptionsPhotos();
-        sanitizeLoadedDatabase();
-        console.log(`[DB] Loaded from Firestore: ${DB.polls.length} polls, ${DB.politicians.length} politicians, ${DB.newsItems.length} news items.`);
-        return;
+    // 2. Query existing payload
+    const res = await pgPool.query('SELECT payload FROM platform_state WHERE id = 1');
+    if (res.rows.length > 0 && res.rows[0].payload) {
+      DB = res.rows[0].payload;
+      
+      // Ensure required properties exist in loaded DB state
+      if (!DB.notifications) {
+        DB.notifications = [];
       }
+      if (!DB.developments) {
+        DB.developments = [];
+      }
+      if (!DB.parties) {
+        DB.parties = [];
+      }
+      if (!DB.settings) {
+        DB.settings = {
+          hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+        };
+      }
+      if (DB.politicians && Array.isArray(DB.politicians)) {
+        DB.politicians.forEach(pol => {
+          if (pol.party) {
+            ensurePartyExists(pol.party, pol.party_color || "#3b82f6", pol.country);
+          }
+        });
+      }
+
+      syncPollOptionsPhotos();
+      sanitizeLoadedDatabase();
+      console.log(`[DB] Loaded from Aiven PostgreSQL: ${DB.polls.length} polls, ${DB.politicians.length} politicians, ${DB.newsItems.length} news items.`);
+      return;
     }
     
-    // No data in firestore
-    console.log("[DB] No existing data found in Firestore — seeding initial data.");
+    // No data in PostgreSQL database
+    console.log("[DB] No existing data found in PostgreSQL — seeding initial data.");
     seedInitialData();
   } catch (err: any) {
-    console.error("[DB] Error reading from Firestore:", err?.message || err);
+    console.error("[DB] Error reading from PostgreSQL:", err?.message || err);
     throw err;
   }
 }
 
 async function saveDatabase() {
-  if (!db) {
-    console.error("[DB] Firestore not initialized, skipping save.");
+  if (!pgPool) {
+    console.error("[DB] PostgreSQL connection pool not initialized, skipping save.");
     return;
   }
   const saveTask = async () => {
@@ -1086,22 +1111,19 @@ async function saveDatabase() {
       syncPollOptionsPhotos();
       const payload = JSON.stringify(DB);
       
-      // Firestore document limit is 1MB. Warn if approaching it.
       const payloadBytes = Buffer.byteLength(payload, 'utf8');
-      if (payloadBytes > 900000) {
-        console.warn(`[DB] WARNING: Database payload is ${(payloadBytes / 1024).toFixed(0)}KB — approaching Firestore 1MB document limit!`);
-      }
+      console.log(`[DB] Saving state to Aiven PostgreSQL... (${(payloadBytes / 1024).toFixed(1)}KB)`);
       
-      const docRef = doc(db, "server_db", SERVER_DB_DOC_ID);
-      await setDoc(docRef, {
-        is_server_node: true,
-        server_secret: SERVER_SECRET,
-        payload,
-        saved_at: new Date().toISOString(),
-      });
-      console.log(`[DB] Saved to Firestore. (${(payloadBytes / 1024).toFixed(1)}KB)`);
+      // Upsert the state into the platform_state table
+      await pgPool!.query(`
+        INSERT INTO platform_state (id, payload, saved_at)
+        VALUES (1, $1, NOW())
+        ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, saved_at = EXCLUDED.saved_at;
+      `, [payload]);
+      
+      console.log("[DB] Successfully saved state to Aiven PostgreSQL.");
     } catch (err: any) {
-      console.error("[DB] Failed to persist database changes to Firestore:", err?.message || err);
+      console.error("[DB] Failed to persist database changes to PostgreSQL:", err?.message || err);
       throw err;
     }
   };
