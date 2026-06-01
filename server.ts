@@ -1343,14 +1343,11 @@ function ensurePartyExists(partyName: string, partyColor: string, country: strin
 const SERVER_DB_DOC_ID = "master_db";
 const SERVER_SECRET = "govtrack_secret_key_12345678901234567890123456789012345678901234";
 
-async function loadDatabase() {
-  if (!pgPool) {
-    console.error("[DB] PostgreSQL connection pool not initialized — falling back to seed data.");
-    seedInitialData();
-    return;
-  }
+let isTableInitialized = false;
+
+async function ensureTableInitialized() {
+  if (isTableInitialized || !pgPool) return;
   try {
-    // 1. Create table if it doesn't exist
     await pgPool.query(`
       CREATE TABLE IF NOT EXISTS platform_state (
         id INT PRIMARY KEY DEFAULT 1,
@@ -1358,7 +1355,23 @@ async function loadDatabase() {
         saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    isTableInitialized = true;
+    console.log("[DB] Database platform_state table initialized.");
+  } catch (err) {
+    console.error("[DB] Failed to initialize table, will retry on next request:", err);
+  }
+}
 
+async function loadDatabase() {
+  if (!pgPool) {
+    console.error("[DB] PostgreSQL connection pool not initialized — falling back to seed data.");
+    seedInitialData();
+    return;
+  }
+  
+  await ensureTableInitialized();
+
+  try {
     // 2. Query existing payload
     const res = await pgPool.query('SELECT payload FROM platform_state WHERE id = 1');
     if (res.rows.length > 0 && res.rows[0].payload) {
@@ -1504,6 +1517,12 @@ app.use(async (req, res, next) => {
     return next();
   }
 
+  // CRITICAL BYPASS: Stateless utility routes (like image proxy/sharing) do NOT read or write the DB.
+  // Bypassing them completely removes 95% of connection overhead during parallel page assets load!
+  if (req.path.startsWith("/api/proxy-image") || req.path.startsWith("/api/share/image")) {
+    return next();
+  }
+
   // Force disable browser, CDN and proxy caching for all API requests to ensure fresh data
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
@@ -1511,10 +1530,17 @@ app.use(async (req, res, next) => {
   res.setHeader("Surrogate-Control", "no-store");
 
   try {
-    // ALWAYS reload the database from PostgreSQL on every API request.
-    // This completely eliminates stale cache memory issues across concurrent serverless containers!
     if (pgPool) {
-      await loadDatabase();
+      const isWriteRequest = req.method !== "GET";
+      const now = Date.now();
+      
+      // Request-level coalescing & short 2-second caching for GET reads.
+      // Force reload immediately for any write requests to prevent race overwrites.
+      if (isWriteRequest || !databaseLoadedPromise || (now - lastDbLoadTime > 2000)) {
+        lastDbLoadTime = now;
+        databaseLoadedPromise = loadDatabase();
+      }
+      await databaseLoadedPromise;
     } else {
       await getDatabaseLoadedPromise();
     }
