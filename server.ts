@@ -501,7 +501,7 @@ function seedInitialData() {
     {
       id: 20,
       full_name: "Anne Waiguru",
-      photo_url: "https://ui-avatars.com/api/?name=Anne+Waiguru&background=32CD32&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/HE._Ann_Waiguru.jpg/250px-HE._Ann_Waiguru.jpg",
       title: "Governor, Kirinyaga County",
       country: "Kenya",
       party: "United Democratic Alliance (UDA)",
@@ -517,7 +517,7 @@ function seedInitialData() {
     {
       id: 21,
       full_name: "Johnson Sakaja",
-      photo_url: "https://ui-avatars.com/api/?name=Johnson+Sakaja&background=32CD32&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Johnson_Sakaja_in_2023.jpg/250px-Johnson_Sakaja_in_2023.jpg",
       title: "Governor, Nairobi County",
       country: "Kenya",
       party: "United Democratic Alliance (UDA)",
@@ -533,7 +533,7 @@ function seedInitialData() {
     {
       id: 22,
       full_name: "Gladys Wanga",
-      photo_url: "https://ui-avatars.com/api/?name=Gladys+Wanga&background=F08080&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Gladys_Wanga.jpg/250px-Gladys_Wanga.jpg",
       title: "Governor, Homa Bay County",
       country: "Kenya",
       party: "Orange Democratic Movement (ODM)",
@@ -549,7 +549,7 @@ function seedInitialData() {
     {
       id: 23,
       full_name: "Dr. Anyang' Nyong'o",
-      photo_url: "https://ui-avatars.com/api/?name=Anyang+Nyongo&background=F08080&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Anyang_Nyong%27o_2023.jpg/250px-Anyang_Nyong%27o_2023.jpg",
       title: "Governor, Kisumu County",
       country: "Kenya",
       party: "Orange Democratic Movement (ODM)",
@@ -565,7 +565,7 @@ function seedInitialData() {
     {
       id: 24,
       full_name: "Irungu Kang'ata",
-      photo_url: "https://ui-avatars.com/api/?name=Irungu+Kangata&background=32CD32&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Irungu_Kang%27ata_2023.jpg/250px-Irungu_Kang%27ata_2023.jpg",
       title: "Governor, Murang'a County",
       country: "Kenya",
       party: "United Democratic Alliance (UDA)",
@@ -581,7 +581,7 @@ function seedInitialData() {
     {
       id: 25,
       full_name: "Fatuma Achani",
-      photo_url: "https://ui-avatars.com/api/?name=Fatuma+Achani&background=32CD32&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Fatuma_Achani_2023.jpg/250px-Fatuma_Achani_2023.jpg",
       title: "Governor, Kwale County",
       country: "Kenya",
       party: "United Democratic Alliance (UDA)",
@@ -597,7 +597,7 @@ function seedInitialData() {
     {
       id: 26,
       full_name: "Ken Lusaka",
-      photo_url: "https://ui-avatars.com/api/?name=Ken+Lusaka&background=008080&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Ken_Lusaka_2023.jpg/250px-Ken_Lusaka_2023.jpg",
       title: "Governor, Bungoma County",
       country: "Kenya",
       party: "Ford Kenya",
@@ -613,7 +613,7 @@ function seedInitialData() {
     {
       id: 27,
       full_name: "Mutula Kilonzo Jr.",
-      photo_url: "https://ui-avatars.com/api/?name=Mutula+Kilonzo&background=0033A0&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Mutula_Kilonzo_Jr.jpg/250px-Mutula_Kilonzo_Jr.jpg",
       title: "Governor, Makueni County",
       country: "Kenya",
       party: "Wiper Democratic Movement",
@@ -629,7 +629,7 @@ function seedInitialData() {
     {
       id: 28,
       full_name: "Cecily Mbarire",
-      photo_url: "https://ui-avatars.com/api/?name=Cecily+Mbarire&background=32CD32&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Cecily_Mbarire_2023.jpg/250px-Cecily_Mbarire_2023.jpg",
       title: "Governor, Embu County",
       country: "Kenya",
       party: "United Democratic Alliance (UDA)",
@@ -645,7 +645,7 @@ function seedInitialData() {
     {
       id: 29,
       full_name: "Abdi Guyo",
-      photo_url: "https://ui-avatars.com/api/?name=Abdi+Guyo&background=FF0000&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Abdi_Guyo_2023.jpg/250px-Abdi_Guyo_2023.jpg",
       title: "Governor, Isiolo County",
       country: "Kenya",
       party: "Jubilee Party",
@@ -677,7 +677,7 @@ function seedInitialData() {
     {
       id: 31,
       full_name: "Rigathi Gachagua",
-      photo_url: "https://ui-avatars.com/api/?name=Rigathi+Gachagua&background=FFCC00&color=000000&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Rigathi_Gachagua_-_2023_%28cropped%29.jpg/250px-Rigathi_Gachagua_-_2023_%28cropped%29.jpg",
       title: "Former Deputy President",
       country: "Kenya",
       party: "Independent / Mt. Kenya Alliance Focus",
@@ -693,7 +693,7 @@ function seedInitialData() {
     {
       id: 32,
       full_name: "Prof. Kithure Kindiki",
-      photo_url: "https://ui-avatars.com/api/?name=Kithure+Kindiki&background=32CD32&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Kithure_Kindiki_2024.jpg/250px-Kithure_Kindiki_2024.jpg",
       title: "Deputy President",
       country: "Kenya",
       party: "United Democratic Alliance (UDA)",
@@ -709,7 +709,7 @@ function seedInitialData() {
     {
       id: 33,
       full_name: "Wycliffe Musalia Mudavadi",
-      photo_url: "https://ui-avatars.com/api/?name=Musalia+Mudavadi&background=008000&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Musalia_Mudavadi_2023.jpg/250px-Musalia_Mudavadi_2023.jpg",
       title: "Prime Cabinet Secretary",
       country: "Kenya",
       party: "Amani National Congress (ANC)",
@@ -725,7 +725,7 @@ function seedInitialData() {
     {
       id: 34,
       full_name: "Okiya Omtatah",
-      photo_url: "https://ui-avatars.com/api/?name=Okiya+Omtatah&background=FF5733&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Okiya_Omtatah_Okoiti_2023.jpg/250px-Okiya_Omtatah_Okoiti_2023.jpg",
       title: "Senator for Busia County / Human Rights Activist",
       country: "Kenya",
       party: "National Reconstruction Alliance (NRA)",
@@ -741,7 +741,7 @@ function seedInitialData() {
     {
       id: 35,
       full_name: "Jimi Wanjigi",
-      photo_url: "https://ui-avatars.com/api/?name=Jimi+Wanjigi&background=000080&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Jimi_Wanjigi.jpg/250px-Jimi_Wanjigi.jpg",
       title: "Safina Party Leader / Businessman",
       country: "Kenya",
       party: "Safina Party",
@@ -757,7 +757,7 @@ function seedInitialData() {
     {
       id: 36,
       full_name: "Dr. Fred Matiang'i",
-      photo_url: "https://ui-avatars.com/api/?name=Fred+Matiangi&background=4A0E4E&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Fred_Matiang%27i_2022.jpg/250px-Fred_Matiang%27i_2022.jpg",
       title: "Former Interior Cabinet Secretary",
       country: "Kenya",
       party: "Prospective Independent Candidate",
@@ -773,7 +773,7 @@ function seedInitialData() {
     {
       id: 37,
       full_name: "Prof. George Wajackoyah",
-      photo_url: "https://ui-avatars.com/api/?name=George+Wajackoyah&background=800080&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/George_Wajackoyah.jpg/250px-George_Wajackoyah.jpg",
       title: "Roots Party Leader",
       country: "Kenya",
       party: "Roots Party of Kenya",
@@ -789,7 +789,7 @@ function seedInitialData() {
     {
       id: 38,
       full_name: "David Waihiga Mwaure",
-      photo_url: "https://ui-avatars.com/api/?name=David+Mwaure&background=FF8C00&color=ffffff&bold=true&size=256",
+      photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/David_Waihiga_Mwaure.jpg/250px-David_Waihiga_Mwaure.jpg",
       title: "Agano Party Leader / Advocate",
       country: "Kenya",
       party: "Agano Party",
@@ -1176,7 +1176,9 @@ function sanitizeLoadedDatabase() {
     "olaf scholz": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Olaf_Scholz_2025_%28cropped%29.jpg/250px-Olaf_Scholz_2025_%28cropped%29.jpg",
     "kalonzo musyoka": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Kalonzo_Musyoka.jpg/250px-Kalonzo_Musyoka.jpg",
     "bola tinubu": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Bola_Tinubu_in_2023.jpg/250px-Bola_Tinubu_in_2023.jpg",
-    "samia suluhu hassan": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Samia_Suluhu_Hassan_in_2021.jpg/250px-Samia_Suluhu_Hassan_in_2021.jpg"
+    "samia suluhu hassan": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Samia_Suluhu_Hassan_in_2021.jpg/250px-Samia_Suluhu_Hassan_in_2021.jpg",
+    "anne waiguru": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/HE._Ann_Waiguru.jpg/250px-HE._Ann_Waiguru.jpg",
+    "rigathi gachagua": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Rigathi_Gachagua_-_2023_%28cropped%29.jpg/250px-Rigathi_Gachagua_-_2023_%28cropped%29.jpg"
   };
 
   // 1. Sanitize politicians
@@ -1381,6 +1383,58 @@ async function loadDatabase() {
         });
       }
 
+      // --- PHOTO MIGRATION: Upgrade any politicians still using ui-avatars placeholders to real Wikipedia portraits ---
+      // This runs on every load to ensure previously-saved data benefits from upgraded seed photo URLs.
+      const UIAVATAR_PATTERN = /ui-avatars\.com/;
+      const realPhotoMap: { [key: string]: string } = {
+        "anne waiguru": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/HE._Ann_Waiguru.jpg/250px-HE._Ann_Waiguru.jpg",
+        "johnson sakaja": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Johnson_Sakaja_in_2023.jpg/250px-Johnson_Sakaja_in_2023.jpg",
+        "gladys wanga": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Gladys_Wanga.jpg/250px-Gladys_Wanga.jpg",
+        "anyang' nyong'o": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Anyang_Nyong%27o_2023.jpg/250px-Anyang_Nyong%27o_2023.jpg",
+        "anyang nyong'o": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Anyang_Nyong%27o_2023.jpg/250px-Anyang_Nyong%27o_2023.jpg",
+        "irungu kang'ata": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Irungu_Kang%27ata_2023.jpg/250px-Irungu_Kang%27ata_2023.jpg",
+        "fatuma achani": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Fatuma_Achani_2023.jpg/250px-Fatuma_Achani_2023.jpg",
+        "ken lusaka": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Ken_Lusaka_2023.jpg/250px-Ken_Lusaka_2023.jpg",
+        "mutula kilonzo jr.": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Mutula_Kilonzo_Jr.jpg/250px-Mutula_Kilonzo_Jr.jpg",
+        "mutula kilonzo jr": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Mutula_Kilonzo_Jr.jpg/250px-Mutula_Kilonzo_Jr.jpg",
+        "cecily mbarire": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Cecily_Mbarire_2023.jpg/250px-Cecily_Mbarire_2023.jpg",
+        "abdi guyo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Abdi_Guyo_2023.jpg/250px-Abdi_Guyo_2023.jpg",
+        "rigathi gachagua": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Rigathi_Gachagua_-_2023_%28cropped%29.jpg/250px-Rigathi_Gachagua_-_2023_%28cropped%29.jpg",
+        "kithure kindiki": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Kithure_Kindiki_2024.jpg/250px-Kithure_Kindiki_2024.jpg",
+        "wycliffe musalia mudavadi": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Musalia_Mudavadi_2023.jpg/250px-Musalia_Mudavadi_2023.jpg",
+        "musalia mudavadi": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Musalia_Mudavadi_2023.jpg/250px-Musalia_Mudavadi_2023.jpg",
+        "okiya omtatah": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Okiya_Omtatah_Okoiti_2023.jpg/250px-Okiya_Omtatah_Okoiti_2023.jpg",
+        "jimi wanjigi": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Jimi_Wanjigi.jpg/250px-Jimi_Wanjigi.jpg",
+        "fred matiang'i": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Fred_Matiang%27i_2022.jpg/250px-Fred_Matiang%27i_2022.jpg",
+        "george wajackoyah": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/George_Wajackoyah.jpg/250px-George_Wajackoyah.jpg",
+        "david waihiga mwaure": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/David_Waihiga_Mwaure.jpg/250px-David_Waihiga_Mwaure.jpg",
+        "william ruto": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/William_Ruto_in_2023.jpg/250px-William_Ruto_in_2023.jpg",
+        "raila odinga": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Raila_Amolo_Odinga_2009_%28cropped%29.jpg/250px-Raila_Amolo_Odinga_2009_%28cropped%29.jpg",
+        "kalonzo musyoka": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Kalonzo_Musyoka.jpg/250px-Kalonzo_Musyoka.jpg"
+      };
+      let migrated = false;
+      if (DB.politicians && Array.isArray(DB.politicians)) {
+        DB.politicians.forEach(pol => {
+          // Only upgrade if currently using a ui-avatars placeholder (meaning no real photo was set by admin)
+          if (UIAVATAR_PATTERN.test(pol.photo_url || "")) {
+            const lowerName = pol.full_name.toLowerCase().trim();
+            for (const [key, value] of Object.entries(realPhotoMap)) {
+              if (lowerName === key || lowerName.includes(key) || key.includes(lowerName)) {
+                console.log(`[DB Photo Migration] Upgrading "${pol.full_name}" from ui-avatars placeholder to real Wikipedia portrait.`);
+                pol.photo_url = value;
+                migrated = true;
+                break;
+              }
+            }
+          }
+        });
+      }
+      if (migrated) {
+        console.log("[DB Photo Migration] Photo migration complete. Persisting upgraded photos to database...");
+        await saveDatabase();
+      }
+      // --- END PHOTO MIGRATION ---
+
       syncPollOptionsPhotos();
       sanitizeLoadedDatabase();
       console.log(`[DB] Loaded from Aiven PostgreSQL: ${DB.polls.length} polls, ${DB.politicians.length} politicians, ${DB.newsItems.length} news items.`);
@@ -1430,10 +1484,12 @@ async function saveDatabase() {
 
 // Cache the promise so we load the database once, shared across requests/cold starts
 let databaseLoadedPromise: Promise<void> | null = null;
+let lastDbLoadTime = 0; // Track when DB was last loaded for TTL-based caching
 
 function getDatabaseLoadedPromise(): Promise<void> {
   if (!databaseLoadedPromise) {
     databaseLoadedPromise = loadDatabase();
+    lastDbLoadTime = Date.now();
   }
   return databaseLoadedPromise;
 }
@@ -1451,10 +1507,15 @@ app.use(async (req, res, next) => {
   res.setHeader("Surrogate-Control", "no-store");
 
   try {
-    // In Vercel serverless environment, we bypass the cache and load fresh from Firestore
-    // on every API request to guarantee we never serve stale cached data from previously-warmed function instances.
+    // In Vercel serverless environment, use a TTL-based cache (30s) instead of reloading DB on every request.
+    // Reloading on every request causes a race condition where concurrent requests can overwrite each other's saves.
     if (process.env.VERCEL) {
-      await loadDatabase();
+      const now = Date.now();
+      if (!databaseLoadedPromise || (now - lastDbLoadTime > 30000)) {
+        lastDbLoadTime = now;
+        databaseLoadedPromise = loadDatabase();
+      }
+      await databaseLoadedPromise;
     } else {
       await getDatabaseLoadedPromise();
     }
