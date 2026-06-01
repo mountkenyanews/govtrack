@@ -429,5 +429,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ name }),
     });
+  },
+
+  async getSettings(): Promise<{ hero_image_url: string }> {
+    return apiFetch("/api/settings");
+  },
+
+  async updateSettings(data: { hero_image_url: string }): Promise<any> {
+    return apiFetch("/api/admin/settings", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 };

@@ -37,6 +37,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     activePollsCount: 6
   });
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [settings, setSettings] = useState<{ hero_image_url: string }>({
+    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+  });
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -54,6 +57,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         const adminStats = await api.getAdminStats().catch(() => null);
         if (adminStats && adminStats.stats) {
           setStats(adminStats.stats);
+        }
+
+        // Fetch platform settings for the dynamic hero background
+        const settingsData = await api.getSettings().catch(() => null);
+        if (settingsData && settingsData.hero_image_url) {
+          setSettings(settingsData);
         }
       } catch (err) {
         console.error("Home loading failed", err);
@@ -94,7 +103,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         {/* Editorial Background Image layer */}
         <div className="absolute inset-0 z-0 select-none">
           <img 
-            src={getProxiedImageUrl("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg")}
+            src={getProxiedImageUrl(settings.hero_image_url)}
             alt="Global electoral and representative assembly" 
             className="w-full h-full object-cover opacity-55 sm:opacity-70 md:opacity-75 transition-opacity duration-300 object-center md:object-right"
             referrerPolicy="no-referrer"

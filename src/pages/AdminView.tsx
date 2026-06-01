@@ -31,11 +31,13 @@ import {
   BarChart2,
   FileText,
   Wand2,
-  Loader2
+  Loader2,
+  Upload
 } from "lucide-react";
 
 import { PosterGenerator } from "../components/PosterGenerator";
 import { RichTextEditor } from "../components/RichTextEditor";
+import { getProxiedImageUrl } from "../components/Shared";
 import { stripHtmlTags } from "../utils/richText";
 
 interface AdminLogs {
@@ -71,9 +73,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [devSearchTerm, setDevSearchTerm] = useState("");
   const [isMassGenerating, setIsMassGenerating] = useState(false);
 
-  // Available tabs: politicians, polls, news, comments, security, developments, parties
-  const [activeTab, setActiveTab] = useState<"leaders" | "polls" | "news" | "comments" | "security" | "developments" | "parties">("leaders");
+  // Available tabs: politicians, polls, news, comments, security, developments, parties, settings
+  const [activeTab, setActiveTab] = useState<"leaders" | "polls" | "news" | "comments" | "security" | "developments" | "parties" | "settings">("leaders");
   
+  // Platform Settings State
+  const [heroImageUrlInput, setHeroImageUrlInput] = useState("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg");
+  const [isUploadingHeroPhoto, setIsUploadingHeroPhoto] = useState(false);
+
   // Political Party Form State
   const [parties, setParties] = useState<Party[]>([]);
   const [isEditingParty, setIsEditingParty] = useState(false);
@@ -203,6 +209,15 @@ export const AdminView: React.FC<AdminViewProps> = ({
         setParties(Array.isArray(allParties) ? allParties : []);
       } catch (e) {
         console.error("Failed to load parties", e);
+      }
+
+      try {
+        const settingsData = await api.getSettings();
+        if (settingsData && settingsData.hero_image_url) {
+          setHeroImageUrlInput(settingsData.hero_image_url);
+        }
+      } catch (e) {
+        console.error("Failed to load settings", e);
       }
 
       setLogs([
@@ -1063,6 +1078,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
           { id: "developments", label: "📈 Dev Verifications", count: pendingDevelopments.length },
           { id: "news", label: "📰 News & Policy", count: newsItems.length },
           { id: "comments", label: "💬 Moderate Dialogue", count: comments.length },
+          { id: "settings", label: "⚙️ Platform Settings", count: 1 },
           { id: "security", label: "🛡️ Audit & Logs", count: logs.length }
         ].map((p) => (
           <button
@@ -2947,6 +2963,151 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 7: PLATFORM SETTINGS */}
+          {activeTab === "settings" && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <h2 className="text-sm font-black text-slate-800 font-mono uppercase">Platform Settings</h2>
+                <p className="text-[11px] text-slate-500">Configure global platform aesthetics, customize the homepage hero image, and manage display parameters.</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
+                {/* Form controls */}
+                <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+                  <h3 className="font-extrabold text-slate-800 text-xs font-mono uppercase tracking-wider border-b border-slate-100 pb-3">
+                    ⚙️ Configure Homepage Hero
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-2 font-mono uppercase tracking-wider text-[10px]">
+                        Hero Background Image URL
+                      </label>
+                      <input
+                        type="url"
+                        value={heroImageUrlInput}
+                        onChange={(e) => setHeroImageUrlInput(e.target.value)}
+                        placeholder="https://example.com/image.jpg"
+                        className="w-full bg-slate-50 border border-slate-350 rounded-lg p-2.5 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition font-semibold"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Provide a direct link to any high-resolution public photo (e.g., from Unsplash, Wikimedia, or storage).
+                      </p>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-4">
+                      <label className="block text-xs font-bold text-slate-700 mb-2 font-mono uppercase tracking-wider text-[10px]">
+                        Or Upload Local Image
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="relative flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl px-4 py-2.5 cursor-pointer text-xs font-black font-mono transition text-slate-700 select-none flex-1">
+                          {isUploadingHeroPhoto ? (
+                            <span className="flex items-center gap-1.5">
+                              <Loader2 className="w-4 h-4 animate-spin text-brand-blue" />
+                              Uploading to Storage...
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5">
+                              <Upload className="w-4 h-4 text-slate-500" />
+                              Select Image File
+                            </span>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                setIsUploadingHeroPhoto(true);
+                                const url = await api.uploadFile(file);
+                                setHeroImageUrlInput(url);
+                                showToastMsg("Image uploaded successfully!");
+                              } catch (err: any) {
+                                showToastMsg("Failed to upload image: " + err.message, true);
+                              } finally {
+                                setIsUploadingHeroPhoto(false);
+                              }
+                            }}
+                            disabled={isUploadingHeroPhoto}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Files will be stored securely in Firebase Cloud Storage.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-6 flex justify-end">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.updateSettings({ hero_image_url: heroImageUrlInput });
+                          showToastMsg("Platform settings saved and applied to live site.");
+                        } catch (err: any) {
+                          showToastMsg("Failed to save settings: " + err.message, true);
+                        }
+                      }}
+                      className="bg-brand-blue hover:bg-blue-700 text-white font-black text-xs px-6 py-3 rounded-lg shadow-md transition font-mono"
+                    >
+                      Save Platform Settings
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preview panel */}
+                <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                  <h3 className="font-extrabold text-slate-800 text-xs font-mono uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center gap-1">
+                    👁️ Hero Live Preview
+                  </h3>
+                  
+                  {/* Miniature Hero Mockup */}
+                  <div className="relative overflow-hidden bg-[#0A1628] rounded-xl text-white p-6 min-h-[220px] flex flex-col justify-center border border-slate-350 select-none">
+                    <div className="absolute inset-0 z-0">
+                      <img 
+                        src={getProxiedImageUrl(heroImageUrlInput)}
+                        alt="Hero Preview" 
+                        className="w-full h-full object-cover opacity-60 transition-opacity duration-300 object-center"
+                        onError={(e) => {
+                          // Fallback to default in case image fails to load in preview
+                          (e.target as HTMLImageElement).src = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628] via-[#0a1628]/85 to-transparent"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628] via-transparent to-transparent"></div>
+                    </div>
+
+                    <div className="relative z-10 space-y-2">
+                      <div className="inline-block bg-[#F5A623]/25 text-[#F5A623] text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#F5A623]/30">
+                        Consensus Portal
+                      </div>
+                      <h4 className="text-sm font-black tracking-tight leading-none text-white font-heading">
+                        Track the Pulse of <span className="text-[#F5A623]">Democracy</span>
+                      </h4>
+                      <p className="text-[9px] text-slate-300 max-w-xs leading-normal">
+                        Real-time, aggregate-authenticated polls on elections, public policy, and leadership.
+                      </p>
+                      <div className="flex gap-1.5 pt-1">
+                        <span className="bg-[#F5A623] text-[#0A1628] font-black text-[8px] px-3 py-1 rounded">
+                          Vote Live
+                        </span>
+                        <span className="bg-white/10 text-white font-bold text-[8px] px-3 py-1 rounded border border-white/15">
+                          Create Poll
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 leading-relaxed italic text-center font-medium">
+                    "Preview updates in real-time. Changes are made live as soon as you press Save Platform Settings."
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

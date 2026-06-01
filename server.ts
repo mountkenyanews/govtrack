@@ -233,6 +233,9 @@ let DB = {
   parties: [] as any[],
   developments: [] as DevelopmentProgress[],
   credentials: {} as Record<string, string>, // email -> password (simulation)
+  settings: {
+    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+  } as { hero_image_url: string }
 };
 
 // Seed Data helper
@@ -301,6 +304,9 @@ function seedInitialData() {
     "journalist@govtrack.org": "journalist",
     "analyst@govtrack.org": "analyst",
     "citizen@govtrack.org": "citizen",
+  };
+  DB.settings = {
+    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
   };
 
   // Seed Politicians
@@ -1040,6 +1046,11 @@ async function loadDatabase() {
         }
         if (!DB.parties) {
           DB.parties = [];
+        }
+        if (!DB.settings) {
+          DB.settings = {
+            hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+          };
         }
         if (DB.politicians && Array.isArray(DB.politicians)) {
           DB.politicians.forEach(pol => {
@@ -2173,6 +2184,36 @@ app.get("/api/admin/stats", (req, res) => {
   });
 });
 
+app.get("/api/settings", (req, res) => {
+  if (!DB.settings) {
+    DB.settings = {
+      hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+    };
+  }
+  res.json(DB.settings);
+});
+
+app.post("/api/admin/settings", async (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Only admins can configure settings." });
+  }
+  
+  const { hero_image_url } = req.body;
+  if (!DB.settings) {
+    DB.settings = {
+      hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+    };
+  }
+  
+  if (hero_image_url !== undefined) {
+    DB.settings.hero_image_url = hero_image_url;
+  }
+  
+  await saveDatabase();
+  res.json({ success: true, settings: DB.settings });
+});
+
 app.post("/api/admin/polls/:id/feature", async (req, res) => {
   const id = parseInt(req.params.id);
   DB.polls.forEach(p => {
@@ -2478,18 +2519,12 @@ async function generateAIContent(prompt: string, schemaDescription: string, fall
     for (const modelName of groqModels) {
       try {
         console.log(`[AI Engine] Attempting prompt via console.groq.com leveraging model: ${modelName}...`);
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${groqApiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: modelName,
-            messages: [
-              {
-                role: "system",
-                content: `You are a professional political researcher, analyst, and database synthesizer.
+        const payload = {
+          model: modelName,
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional political researcher, analyst, and database synthesizer.
 You MUST strictly return a valid, parsable RFC-compliant JSON object conforming EXACTLY to the following schema specification:
 ${schemaDescription}
 
@@ -2497,16 +2532,38 @@ Rules:
 1. Do NOT wrap the JSON in Markdown codeblocks (e.g. do not use \`\`\`json).
 2. Do NOT output any conversational text, introductory text, or concluding text. Let your response start with "{" and end with "}".
 3. Use double quotes for keys and string values.`
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.2
-          })
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.2
+        };
+
+        let response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${groqApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
         });
+
+        // Groq rate limit 429 interceptor: Wait for 2.5 seconds and retry once
+        if (response.status === 429) {
+          console.warn(`[AI Engine] Groq API returned 429 Too Many Requests using model ${modelName}. Waiting 2500ms before retrying once...`);
+          await new Promise(resolve => setTimeout(resolve, 2500));
+          response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${groqApiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+        }
 
         if (response.ok) {
           const data = await response.json() as any;
@@ -2549,9 +2606,9 @@ Rules:
       throw new Error("No AI API key configured (GROQ_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY required).");
     }
     
-    console.log(`[AI Engine] Attempting Gemini fallback via gemini-2.0-flash...`);
+    console.log(`[AI Engine] Attempting Gemini fallback via gemini-2.5-flash...`);
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
