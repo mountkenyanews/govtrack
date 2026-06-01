@@ -796,7 +796,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
           const errData = await response.json();
           throw new Error(errData.error || "Failed to create dynamic poll");
         }
-        const createdPoll = await response.json();
+        const resData = await response.json();
+        const createdPoll = resData.poll;
         
         // If status was chosen to be active, and creating resulted in scheduled, override it
         if (pollForm.status !== "scheduled") {
