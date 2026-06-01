@@ -243,7 +243,31 @@ export const PollDetailView: React.FC<PollDetailViewProps> = ({ pollId, onNaviga
       }
 
       // Load votes list check
-      const votedCheck = await api.getUserVotedState(pollId, currentUser?.id);
+      let votedCheck = { voted: false, option_ids: [] as number[] };
+
+      // Local storage guest backup source of truth check first
+      if (!currentUser) {
+        try {
+          const guestVotes = JSON.parse(localStorage.getItem("govtrack_guest_votes") || "{}");
+          if (guestVotes[pollId]) {
+            votedCheck = { voted: true, option_ids: guestVotes[pollId] };
+          }
+        } catch (e) {
+          console.error("Local storage read error:", e);
+        }
+      }
+
+      if (!votedCheck.voted) {
+        try {
+          const check = await api.getUserVotedState(pollId, currentUser?.id);
+          if (check.voted && check.option_ids) {
+            votedCheck = { voted: true, option_ids: check.option_ids };
+          }
+        } catch (err) {
+          console.error("API user_voted check failed", err);
+        }
+      }
+
       if (votedCheck.voted && votedCheck.option_ids) {
         setVoted(true);
         setVotedOptionIds(votedCheck.option_ids);
@@ -303,6 +327,16 @@ export const PollDetailView: React.FC<PollDetailViewProps> = ({ pollId, onNaviga
         setVotedOptionIds(selectedOptions);
         setPoll(res.poll);
         setSuccessMsg("Your official ballot opinion has been recorded successfully!");
+        
+        if (!currentUser) {
+          try {
+            const guestVotes = JSON.parse(localStorage.getItem("govtrack_guest_votes") || "{}");
+            guestVotes[pollId] = selectedOptions;
+            localStorage.setItem("govtrack_guest_votes", JSON.stringify(guestVotes));
+          } catch (e) {
+            console.error("Local storage write error:", e);
+          }
+        }
         
         // Show Success toast simulation
         setTimeout(() => setSuccessMsg(""), 4000);

@@ -96,7 +96,30 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
       const pollData = await api.getPoll(pollId);
       setEmbeddedPoll(pollData);
 
-      const votedCheck = await api.getUserVotedState(pollId, currentUser?.id);
+      let votedCheck = { voted: false, option_ids: [] as number[] };
+
+      if (!currentUser) {
+        try {
+          const guestVotes = JSON.parse(localStorage.getItem("govtrack_guest_votes") || "{}");
+          if (guestVotes[pollId]) {
+            votedCheck = { voted: true, option_ids: guestVotes[pollId] };
+          }
+        } catch (e) {
+          console.error("Local storage read error:", e);
+        }
+      }
+
+      if (!votedCheck.voted) {
+        try {
+          const check = await api.getUserVotedState(pollId, currentUser?.id);
+          if (check.voted && check.option_ids) {
+            votedCheck = { voted: true, option_ids: check.option_ids };
+          }
+        } catch (err) {
+          console.error("API user_voted check failed", err);
+        }
+      }
+
       if (votedCheck.voted && votedCheck.option_ids) {
         setPollVoted(true);
         setPollVotedOptionIds(votedCheck.option_ids);
@@ -183,6 +206,17 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
         setPollVotedOptionIds(pollSelectedOptions);
         setEmbeddedPoll(res.poll);
         setVotingSuccessMsg("Your feedback opinion ballot has been saved successfully!");
+        
+        if (!currentUser) {
+          try {
+            const guestVotes = JSON.parse(localStorage.getItem("govtrack_guest_votes") || "{}");
+            guestVotes[embeddedPoll.id] = pollSelectedOptions;
+            localStorage.setItem("govtrack_guest_votes", JSON.stringify(guestVotes));
+          } catch (e) {
+            console.error("Local storage write error:", e);
+          }
+        }
+        
         setTimeout(() => setVotingSuccessMsg(""), 4000);
       }
     } catch (err: any) {

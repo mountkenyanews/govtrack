@@ -41,6 +41,7 @@ if (databaseUrl) {
 }
 
 const app = express();
+app.set("trust proxy", true);
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: "20mb" }));
@@ -86,6 +87,20 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Helper to reliably retrieve client actual IP behind reverse proxies
+function getClientIp(req: express.Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    const firstIp = forwarded.split(",")[0].trim();
+    if (firstIp) return firstIp;
+  }
+  const realIp = req.headers["x-real-ip"];
+  if (typeof realIp === "string" && realIp.trim()) {
+    return realIp.trim();
+  }
+  return req.ip || (req.socket && req.socket.remoteAddress) || "127.0.0.1";
+}
 
 // SEO: Dynamic sitemap.xml for Google indexing
 app.get("/sitemap.xml", async (req, res) => {
@@ -1914,7 +1929,7 @@ app.get("/api/polls/:id/device-metrics", (req, res) => {
 app.post("/api/polls/:id/vote", async (req, res) => {
   const pollId = parseInt(req.params.id);
   const { option_ids, user_id, device_type } = req.body;
-  const ip = req.ip || req.headers["x-forwarding-for"] || "127.0.0.1";
+  const ip = getClientIp(req);
   
   // Use simple hashing logic
   const ip_hash = Buffer.from(String(ip)).toString("base64").substring(0, 10);
@@ -2052,7 +2067,7 @@ function recalculatePoliticianRatings() {
 app.get("/api/polls/:id/user_voted", (req, res) => {
   const pollId = parseInt(req.params.id);
   const userId = req.query.user_id ? parseInt(req.query.user_id as string) : null;
-  const ip = req.ip || req.headers["x-forwarding-for"] || "127.0.0.1";
+  const ip = getClientIp(req);
   const ip_hash = Buffer.from(String(ip)).toString("base64").substring(0, 10);
 
   let votedMatch = null;
