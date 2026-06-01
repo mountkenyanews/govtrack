@@ -1030,6 +1030,7 @@ async function loadDatabase() {
     // No data in PostgreSQL database
     console.log("[DB] No existing data found in PostgreSQL — seeding initial data.");
     seedInitialData();
+    await saveDatabase();
   } catch (err: any) {
     console.error("[DB] Error reading from PostgreSQL:", err?.message || err);
     throw err;
