@@ -1507,22 +1507,21 @@ app.use(async (req, res, next) => {
   res.setHeader("Surrogate-Control", "no-store");
 
   try {
-    // In Vercel serverless environment, use a TTL-based cache (30s) instead of reloading DB on every request.
-    // Reloading on every request causes a race condition where concurrent requests can overwrite each other's saves.
-    if (process.env.VERCEL) {
-      const now = Date.now();
-      if (!databaseLoadedPromise || (now - lastDbLoadTime > 30000)) {
-        lastDbLoadTime = now;
-        databaseLoadedPromise = loadDatabase();
-      }
-      await databaseLoadedPromise;
+    // ALWAYS reload the database from PostgreSQL on every API request.
+    // This completely eliminates stale cache memory issues across concurrent serverless containers!
+    if (pgPool) {
+      await loadDatabase();
     } else {
       await getDatabaseLoadedPromise();
     }
     next();
-  } catch (err) {
-    console.error("[Database Middleware] Error awaiting database load:", err);
-    next(); // Fallback to current memory state
+  } catch (err: any) {
+    console.error("[Database Middleware] Error loading database from PostgreSQL:", err);
+    // CRITICAL: Return a 500 error instead of silently falling back to a blank or default seed state!
+    // This completely protects existing data from being accidentally overwritten by a blank/reset save.
+    res.status(500).json({ 
+      error: "Database connection failed. Please refresh or try again. Technical details: " + (err?.message || err) 
+    });
   }
 });
 
@@ -3762,8 +3761,7 @@ async function startServer() {
       getDatabaseLoadedPromise().then(() => {
         console.log("Database ready. GovTrack is fully operational.");
       }).catch((err) => {
-        console.error("Database load failed, using seed data:", err);
-        seedInitialData();
+        console.error("Database load failed:", err);
       });
     });
   } else {
@@ -3771,8 +3769,7 @@ async function startServer() {
     getDatabaseLoadedPromise().then(() => {
       console.log("[Vercel] Database ready.");
     }).catch((err) => {
-      console.error("[Vercel] Database load failed, using seed data:", err);
-      seedInitialData();
+      console.error("[Vercel] Database load failed:", err);
     });
   }
 }
