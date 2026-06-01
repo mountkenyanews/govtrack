@@ -27,7 +27,7 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
-import { PoliticianAvatar, VoteProgressBar } from "../components/Shared";
+import { PoliticianAvatar, VoteProgressBar, getProxiedImageUrl } from "../components/Shared";
 import { formatArticleContent, stripHtmlTags } from "../utils/richText";
 
 interface NewsViewProps {
@@ -228,7 +228,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
           {/* Banner cover */}
           <div className="aspect-[21/9] w-full bg-slate-100 relative overflow-hidden">
             <img 
-              src={activeArticle.image_url} 
+              src={getProxiedImageUrl(activeArticle.image_url)} 
               alt={activeArticle.title} 
               className="w-full h-full object-cover" 
             />
@@ -546,7 +546,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
                     onClick={() => handleSelectArticleThumbnail(item)}
                   >
                     <img 
-                      src={item.image_url} 
+                      src={getProxiedImageUrl(item.image_url)} 
                       alt={item.title} 
                       className="w-full h-full object-cover transition duration-500 group-hover:scale-105" 
                     />
@@ -708,7 +708,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
                   {/* Aspect video banner */}
                   <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-100">
                     <img 
-                      src={activeArticle.image_url} 
+                      src={getProxiedImageUrl(activeArticle.image_url)} 
                       alt={activeArticle.title} 
                       className="w-full h-full object-cover" 
                     />

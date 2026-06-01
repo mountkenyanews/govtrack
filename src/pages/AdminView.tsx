@@ -312,15 +312,27 @@ export const AdminView: React.FC<AdminViewProps> = ({
     showToastMsg("Mass generating timelines... Please leave this tab open.");
     
     const targetPoliticians = politicians.filter(p => p.full_name.toLowerCase().includes(devSearchTerm.toLowerCase()));
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     
     let successCount = 0;
     for (const pol of targetPoliticians) {
       try {
+        // Step 1. Check if developments already exist for this politician to prevent duplicate work and waste of AI limits
+        const existingDevs = await api.getDevelopments(pol.id, true).catch(() => []);
+        if (existingDevs && existingDevs.length > 0) {
+          console.log(`Skipping ${pol.full_name} because developments already exist.`);
+          continue;
+        }
+
+        // Step 2. Generate and save missing developments
         const res = await api.adminDraftDevelopments(pol.id, "");
         if (res.success && res.generated && res.generated.length > 0) {
            await api.adminSaveBulkDevelopments(pol.id, res.generated);
            successCount++;
         }
+
+        // Step 3. Wait 2 seconds to avoid hitting model Rate Limits (429 Too Many Requests)
+        await sleep(2000);
       } catch (e) {
         console.error("Failed to generate for " + pol.full_name, e);
       }

@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { Poll, Politician, NewsItem, PlatformStats } from "../types";
 import { api } from "../utils/api";
-import { PollCard, PoliticianAvatar, ApprovalRingChart } from "../components/Shared";
+import { PollCard, PoliticianAvatar, ApprovalRingChart, getProxiedImageUrl } from "../components/Shared";
 import { stripHtmlTags } from "../utils/richText";
 import { 
   Vote, 
@@ -94,7 +94,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         {/* Editorial Background Image layer */}
         <div className="absolute inset-0 z-0 select-none">
           <img 
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+            src={getProxiedImageUrl("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg")}
             alt="Global electoral and representative assembly" 
             className="w-full h-full object-cover opacity-55 sm:opacity-70 md:opacity-75 transition-opacity duration-300 object-center md:object-right"
             referrerPolicy="no-referrer"
@@ -359,7 +359,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
                 className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full"
               >
                 <div className="aspect-video w-full bg-slate-100 overflow-hidden relative">
-                  <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                  <img src={getProxiedImageUrl(item.image_url)} alt={item.title} className="w-full h-full object-cover" />
                   <span className="absolute bottom-2 left-2 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-bold font-mono">
                     {item.source_name}
                   </span>

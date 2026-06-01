@@ -29,16 +29,26 @@ interface PoliticianAvatarProps {
   showTooltip?: boolean;
 }
 
+export function getProxiedImageUrl(url: string): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (trimmed.startsWith("/") || trimmed.startsWith("data:") || trimmed.startsWith("blob:") || trimmed.startsWith("http://localhost") || trimmed.startsWith("https://ui-avatars.com")) {
+    return trimmed;
+  }
+  return `/api/proxy-image?url=${encodeURIComponent(trimmed)}`;
+}
+
 const getPerfectPoliticianImage = (name: string, photo_url?: string): string => {
   const url = photo_url?.trim() || "";
   const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
   if (url !== "" && !STOCK_UNSPLASH_PATTERN.test(url)) {
-    return url;
+    return getProxiedImageUrl(url);
   }
 
   // Premium, clean initials avatar based on real politician's name instead of random stock templates
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a1628&color=ffffff&size=256&bold=true`;
 };
+
 
 export const PoliticianAvatar: React.FC<PoliticianAvatarProps> = ({
   name,

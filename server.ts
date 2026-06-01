@@ -1060,8 +1060,8 @@ async function loadDatabase() {
     console.log("[DB] No existing data found in Firestore — seeding initial data.");
     seedInitialData();
   } catch (err: any) {
-    console.error("[DB] Error reading from Firestore — falling back to seed data:", err?.message || err);
-    seedInitialData();
+    console.error("[DB] Error reading from Firestore:", err?.message || err);
+    throw err;
   }
 }
 
@@ -1922,7 +1922,7 @@ Crucially, in the "description" field for each development, you MUST explain:
 2. The scale of impact (how many people it helped or is helping).
 3. Any negative impacts, criticisms, or trade-offs that resulted, and specifically how the politician handled or mitigated them.
 
-Ensure the description is comprehensive, balanced, and includes these nuances.`;
+Ensure the description is high-quality, balanced, includes these nuances, and is concise (under 250 characters per item).`;
 
     if (context && context.trim()) {
       prompt += `\n\nAdditional Context/Correction: ${context}\nIf this context includes a Wikipedia URL or information, heavily incorporate it to generate accurate entries.`;
