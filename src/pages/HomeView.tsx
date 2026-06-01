@@ -74,6 +74,24 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     loadHomeData();
   }, []);
 
+  useEffect(() => {
+    const handleSettingsChange = async () => {
+      try {
+        const settingsData = await api.getSettings().catch(() => null);
+        if (settingsData && settingsData.hero_image_url) {
+          setSettings(settingsData);
+        }
+      } catch (err) {
+        console.error("Failed to update settings dynamically", err);
+      }
+    };
+
+    window.addEventListener("govtrack_settings_change", handleSettingsChange);
+    return () => {
+      window.removeEventListener("govtrack_settings_change", handleSettingsChange);
+    };
+  }, []);
+
   // Find featured poll
   const featuredPoll = polls.find(p => p.is_featured && p.status === "active") || polls[0];
   const otherActivePolls = polls.filter(p => p.id !== (featuredPoll?.id || -1));

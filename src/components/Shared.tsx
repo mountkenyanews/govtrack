@@ -32,7 +32,14 @@ interface PoliticianAvatarProps {
 export function getProxiedImageUrl(url: string): string {
   if (!url) return "";
   const trimmed = url.trim();
-  if (trimmed.startsWith("/") || trimmed.startsWith("data:") || trimmed.startsWith("blob:") || trimmed.startsWith("http://localhost") || trimmed.startsWith("https://ui-avatars.com")) {
+  if (
+    trimmed.startsWith("/") || 
+    trimmed.startsWith("data:") || 
+    trimmed.startsWith("blob:") || 
+    trimmed.startsWith("http://localhost") || 
+    trimmed.startsWith("https://ui-avatars.com") ||
+    trimmed.includes("firebasestorage")
+  ) {
     return trimmed;
   }
   return `/api/proxy-image?url=${encodeURIComponent(trimmed)}`;

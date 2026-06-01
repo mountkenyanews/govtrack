@@ -37,6 +37,11 @@ export function broadcastSessionChange() {
   window.dispatchEvent(new Event("govtrack_session_change"));
 }
 
+// Global Custom Event to broadcast platform settings changes instantly!
+export function broadcastSettingsChange() {
+  window.dispatchEvent(new Event("govtrack_settings_change"));
+}
+
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const token = getSavedToken();
   const headers = {
@@ -436,9 +441,11 @@ export const api = {
   },
 
   async updateSettings(data: { hero_image_url: string }): Promise<any> {
-    return apiFetch("/api/admin/settings", {
+    const res = await apiFetch("/api/admin/settings", {
       method: "POST",
       body: JSON.stringify(data),
     });
+    broadcastSettingsChange();
+    return res;
   }
 };
