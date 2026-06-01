@@ -802,7 +802,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
         // If status was chosen to be active, and creating resulted in scheduled, override it
         if (pollForm.status !== "scheduled") {
           const updated = await api.updatePollStatus(createdPoll.id, pollForm.status);
-          setPolls([updated, ...polls]);
+          setPolls([updated && updated.poll ? updated.poll : createdPoll, ...polls]);
         } else {
           setPolls([createdPoll, ...polls]);
         }
@@ -819,7 +819,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const handleApprovePoll = async (pollId: number) => {
     try {
       const updated = await api.updatePollStatus(pollId, "active");
-      setPolls(polls.map(p => p.id === pollId ? updated : p));
+      setPolls(polls.map(p => p.id === pollId ? (updated && updated.poll ? updated.poll : p) : p));
       showToastMsg(`Poll authorized and published to user feeds.`);
     } catch (err: any) {
       showToastMsg(err.message || "Approval failed.", true);
