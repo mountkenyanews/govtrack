@@ -3365,13 +3365,14 @@ app.put("/api/admin/polls/:id", async (req, res) => {
     return res.status(404).json({ error: "Poll not found" });
   }
 
-  const { title, description, category, poll_type, status, is_featured, allow_comments, country, options } = req.body;
+  const { title, description, category, poll_type, status, is_featured, allow_comments, country, closes_at, options } = req.body;
 
   if (title !== undefined) poll.title = title;
   if (description !== undefined) poll.description = description;
   if (category !== undefined) poll.category = category;
   if (poll_type !== undefined) poll.poll_type = poll_type;
   if (status !== undefined) poll.status = status;
+  if (closes_at !== undefined) poll.closes_at = closes_at || undefined;
   if (is_featured !== undefined) {
     poll.is_featured = !!is_featured;
     if (poll.is_featured) {

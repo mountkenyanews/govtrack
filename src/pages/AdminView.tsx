@@ -154,6 +154,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     allow_comments: true,
     country: "Kenya",
     is_featured: false,
+    closes_at: "",
     options: [] as Array<{
       id?: number;
       label: string;
@@ -707,6 +708,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
       allow_comments: true,
       country: "Kenya",
       is_featured: false,
+      closes_at: "",
       options: [
         { label: "Option 1", description: "First choice support statement", photo_url: "", party: "", party_color: "#10b981", vote_count: 0, order: 1 },
         { label: "Option 2", description: "Alternative choice counter-statement", photo_url: "", party: "", party_color: "#ef4444", vote_count: 0, order: 2 }
@@ -726,6 +728,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
       allow_comments: poll.allow_comments,
       country: poll.country,
       is_featured: poll.is_featured,
+      closes_at: poll.closes_at ? (poll.closes_at.length === 10 ? `${poll.closes_at}T00:00` : poll.closes_at.substring(0, 16)) : "",
       options: poll.options.map(opt => ({
         id: opt.id,
         label: opt.label,
@@ -1758,7 +1761,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-100 p-3 rounded border border-slate-200 font-mono text-[11px] font-bold text-slate-700">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-slate-100 p-3 rounded border border-slate-200 font-mono text-[11px] font-bold text-slate-700">
                       
                       <div className="space-y-1">
                         <label>Poll Form Status</label>
@@ -1786,6 +1789,16 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           <option value="approval_rating">Approval Scale</option>
                           <option value="yes_no">Yes / No</option>
                         </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label>Expiry / Closing Time</label>
+                        <input 
+                          type="datetime-local"
+                          value={pollForm.closes_at}
+                          onChange={e => setPollForm({...pollForm, closes_at: e.target.value})}
+                          className="w-full p-1 border border-slate-300 rounded bg-white font-bold text-slate-800"
+                        />
                       </div>
 
                       <div className="flex items-center gap-2 pt-4">
