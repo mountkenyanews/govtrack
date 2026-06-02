@@ -1176,6 +1176,19 @@ function syncPollOptionsPhotos() {
   });
 }
 
+function syncPollViewsWithVotes() {
+  if (!DB.polls || !Array.isArray(DB.polls)) return;
+  DB.polls.forEach(poll => {
+    if (poll.options && Array.isArray(poll.options)) {
+      poll.total_votes = poll.options.reduce((sum, o) => sum + (o.vote_count || 0), 0);
+    }
+    if (poll.view_count < poll.total_votes) {
+      // Ensure views match or exceed total votes, adding a natural random offset
+      poll.view_count = poll.total_votes + Math.floor(Math.random() * 500) + 150;
+    }
+  });
+}
+
 function sanitizeLoadedDatabase() {
   if (!DB) return;
   const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
@@ -1468,6 +1481,7 @@ async function loadDatabase() {
       // --- END PHOTO MIGRATION ---
 
       syncPollOptionsPhotos();
+      syncPollViewsWithVotes();
       sanitizeLoadedDatabase();
       console.log(`[DB] Loaded from Aiven PostgreSQL: ${DB.polls.length} polls, ${DB.politicians.length} politicians, ${DB.newsItems.length} news items.`);
       return;
@@ -1491,6 +1505,7 @@ async function saveDatabase() {
   const saveTask = async () => {
     try {
       syncPollOptionsPhotos();
+      syncPollViewsWithVotes();
       const payload = JSON.stringify(DB);
       
       const payloadBytes = Buffer.byteLength(payload, 'utf8');
