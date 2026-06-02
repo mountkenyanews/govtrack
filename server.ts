@@ -1150,26 +1150,16 @@ function seedInitialData() {
 // Only fills in missing poll option photos from politician records — never overwrites uploaded images
 function syncPollOptionsPhotos() {
   if (!DB.polls || !DB.politicians) return;
-  const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
   DB.polls.forEach(poll => {
     if (poll.options && Array.isArray(poll.options)) {
       poll.options.forEach(opt => {
-        // Only update if photo_url is blank, a placeholder avatar, or a stock Unsplash random person photo
-        const isPlaceholderOrStock = !opt.photo_url ||
-          opt.photo_url.includes("ui-avatars.com") ||
-          STOCK_UNSPLASH_PATTERN.test(opt.photo_url);
-        if (!isPlaceholderOrStock) return; // preserve custom/uploaded photos
-        
         const matches = DB.politicians.find(p => 
           p.full_name.toLowerCase().trim() === opt.label.toLowerCase().trim() ||
           p.full_name.toLowerCase().includes(opt.label.toLowerCase().trim()) ||
           opt.label.toLowerCase().includes(p.full_name.toLowerCase().trim())
         );
         if (matches && matches.photo_url) {
-          // Only use the politician photo if it's not itself a stock Unsplash photo
-          if (!STOCK_UNSPLASH_PATTERN.test(matches.photo_url)) {
-            opt.photo_url = matches.photo_url;
-          }
+          opt.photo_url = matches.photo_url;
         }
       });
     }
