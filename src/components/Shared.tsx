@@ -46,7 +46,7 @@ export function getProxiedImageUrl(url: string): string {
   return `/api/proxy-image?url=${encodeURIComponent(trimmed)}`;
 }
 
-const getPerfectPoliticianImage = (name: string, photo_url?: string): string => {
+export const getPerfectPoliticianImage = (name: string, photo_url?: string): string => {
   const url = photo_url?.trim() || "";
   const STOCK_UNSPLASH_PATTERN = /unsplash\.com\/photo-/;
   if (url !== "" && !STOCK_UNSPLASH_PATTERN.test(url)) {

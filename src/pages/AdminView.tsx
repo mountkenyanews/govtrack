@@ -37,7 +37,7 @@ import {
 
 import { PosterGenerator } from "../components/PosterGenerator";
 import { RichTextEditor } from "../components/RichTextEditor";
-import { getProxiedImageUrl } from "../components/Shared";
+import { getProxiedImageUrl, getPerfectPoliticianImage } from "../components/Shared";
 import { stripHtmlTags } from "../utils/richText";
 
 interface AdminLogs {
@@ -1588,7 +1588,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <div className="p-4 space-y-3">
                       <div className="flex items-start gap-3">
                         <img 
-                          src={pol.photo_url || "https://ui-avatars.com/api/?name=Leader"} 
+                          src={getPerfectPoliticianImage(pol.full_name, pol.photo_url)} 
                           alt={pol.full_name}
                           referrerPolicy="no-referrer"
                           className="w-16 h-16 rounded-full border border-slate-200 object-cover bg-slate-50 shrink-0 shadow-inner"
@@ -2260,7 +2260,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           return (
                             <div key={pol.id} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 rounded px-2 transition">
                                <div className="flex items-center gap-2">
-                                 <img src={pol.photo_url} alt={pol.full_name} className="w-6 h-6 rounded-full object-cover border border-slate-200"/>
+                                 <img src={getPerfectPoliticianImage(pol.full_name, pol.photo_url)} alt={pol.full_name} className="w-6 h-6 rounded-full object-cover border border-slate-200"/>
                                  <span className="font-bold text-xs text-slate-700">{pol.full_name}</span>
                                </div>
                                 <button

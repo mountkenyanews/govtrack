@@ -1775,13 +1775,23 @@ app.get("/api/proxy-image", async (req, res) => {
   const url = req.query.url as string;
   if (!url) return res.status(400).send("No url provided");
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "image/*, */*"
+      }
+    });
+    if (!response.ok) {
+      console.error(`[Proxy Image] Failed to fetch target image. Status: ${response.status} URL: ${url}`);
+      return res.status(response.status).send(`Failed to fetch image: ${response.statusText}`);
+    }
     const buffer = await response.arrayBuffer();
     res.set("Content-Type", response.headers.get("content-type") || "image/jpeg");
     res.set("Cache-Control", "public, max-age=31536000");
     res.set("Access-Control-Allow-Origin", "*");
     res.send(Buffer.from(buffer));
-  } catch (err) {
+  } catch (err: any) {
+    console.error(`[Proxy Image] Error fetching URL: ${url}`, err);
     res.status(500).send("Failed to fetch image");
   }
 });

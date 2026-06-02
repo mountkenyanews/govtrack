@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { User, Politician } from "../types";
 import { api, getSavedUser } from "../utils/api";
+import { getPerfectPoliticianImage } from "../components/Shared";
 import { 
   Plus, 
   Trash, 
@@ -406,7 +407,7 @@ export const CreatePollView: React.FC<CreatePollViewProps> = ({ onNavigate }) =>
                       />
                     </div>
                     {opt.photo_url && (
-                      <img src={opt.photo_url} className="w-10 h-10 rounded-full border border-slate-200 object-cover" />
+                      <img src={getPerfectPoliticianImage(opt.label || "Option", opt.photo_url)} className="w-10 h-10 rounded-full border border-slate-200 object-cover" />
                     )}
                   </div>
                 </div>
@@ -461,7 +462,7 @@ export const CreatePollView: React.FC<CreatePollViewProps> = ({ onNavigate }) =>
                 {options.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2.5 bg-white/5 p-2 rounded text-xs border border-white/5">
                     {opt.photo_url ? (
-                      <img src={opt.photo_url} className="w-8 h-8 rounded-full border border-white/10 object-cover" />
+                      <img src={getPerfectPoliticianImage(opt.label || "Option", opt.photo_url)} className="w-8 h-8 rounded-full border border-white/10 object-cover" />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold font-mono">
                         #
@@ -523,7 +524,7 @@ export const CreatePollView: React.FC<CreatePollViewProps> = ({ onNavigate }) =>
                   onClick={() => selectPoliticianToPreFill(pol)}
                   className="p-2.5 bg-slate-50 hover:bg-brand-gold/15 rounded-lg border border-slate-150 cursor-pointer flex items-center gap-3 transition text-left"
                 >
-                  <img src={pol.photo_url} className="w-8 h-8 rounded-full border shrink-0 object-cover" />
+                  <img src={getPerfectPoliticianImage(pol.full_name, pol.photo_url)} className="w-8 h-8 rounded-full border shrink-0 object-cover" />
                   <div>
                     <span className="font-black text-xs text-slate-800 block">{pol.full_name}</span>
                     <span className="text-[10px] text-slate-500 block">{pol.title} · {pol.party}</span>
