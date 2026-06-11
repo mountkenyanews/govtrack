@@ -60,30 +60,43 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
 
   // Load news list
   useEffect(() => {
-    const fetchNewsFeed = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
-        const list = await api.getNews();
-        setNews(list);
-
-        // If initialArticleId was provided, resolve the active article
-        const targetId = initialArticleId;
-        if (targetId) {
-          const matched = list.find(n => n.id === targetId);
-          if (matched) {
-            setActiveArticle(matched);
+        if (initialArticleId) {
+          // 1. Fetch single article directly first for near-instant loading!
+          try {
+            const article = await api.getNewsItem(initialArticleId);
+            setActiveArticle(article);
+            setLoading(false); // Display article page immediately
+          } catch (err) {
+            console.error("Failed to load active article details directly", err);
           }
+
+          // 2. Load the rest of the feed in the background
+          const list = await api.getNews();
+          setNews(list);
+          // If direct fetch failed, fallback to finding it in the loaded list
+          if (!activeArticle) {
+            const matched = list.find(n => n.id === initialArticleId);
+            if (matched) setActiveArticle(matched);
+            setLoading(false);
+          }
+        } else {
+          // Standard feed loading
+          const list = await api.getNews();
+          setNews(list);
+          setLoading(false);
         }
       } catch (err) {
         console.error("Failed to load news feed", err);
-      } finally {
         setLoading(false);
       }
     };
-    fetchNewsFeed();
+    fetchInitialData();
   }, [initialArticleId]);
 
-  // Load poll details (on active article change or user change) - No background setInterval loop!
+  // Load poll details (on active article change or user change) in parallel!
   const loadPollDetails = async (showLoadingIndicator = true) => {
     if (!activeArticle || !activeArticle.related_poll_id) {
       setEmbeddedPoll(null);
@@ -93,11 +106,9 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
     const pollId = activeArticle.related_poll_id;
     try {
       if (showLoadingIndicator) setPollLoading(true);
-      const pollData = await api.getPoll(pollId);
-      setEmbeddedPoll(pollData);
 
+      // Check local guest votes first
       let votedCheck = { voted: false, option_ids: [] as number[] };
-
       if (!currentUser) {
         try {
           const guestVotes = JSON.parse(localStorage.getItem("govtrack_guest_votes") || "{}");
@@ -109,15 +120,18 @@ export const NewsView: React.FC<NewsViewProps> = ({ onNavigate, initialArticleId
         }
       }
 
-      if (!votedCheck.voted) {
-        try {
-          const check = await api.getUserVotedState(pollId, currentUser?.id);
-          if (check.voted && check.option_ids) {
-            votedCheck = { voted: true, option_ids: check.option_ids };
-          }
-        } catch (err) {
-          console.error("API user_voted check failed", err);
-        }
+      // Query poll data and user voted state in parallel (saves 1 round-trip latency)
+      const [pollData, check] = await Promise.all([
+        api.getPoll(pollId),
+        (votedCheck.voted || !currentUser)
+          ? Promise.resolve(null)
+          : api.getUserVotedState(pollId, currentUser.id).catch(() => null)
+      ]);
+
+      setEmbeddedPoll(pollData);
+
+      if (check && check.voted && check.option_ids) {
+        votedCheck = { voted: true, option_ids: check.option_ids };
       }
 
       if (votedCheck.voted && votedCheck.option_ids) {

@@ -251,6 +251,10 @@ export const api = {
     return apiFetch(`/api/news${query}`);
   },
 
+  async getNewsItem(id: number): Promise<NewsItem> {
+    return apiFetch(`/api/news/${id}`);
+  },
+
   // Wizard Creation
   async createPoll(data: any): Promise<{ poll: Poll }> {
     return apiFetch("/api/polls/create", {

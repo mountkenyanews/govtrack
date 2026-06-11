@@ -2528,6 +2528,13 @@ app.get("/api/news", (req, res) => {
   res.json(result);
 });
 
+app.get("/api/news/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const article = DB.newsItems.find(n => n.id === id);
+  if (!article) return res.status(404).json({ error: "Article not found" });
+  res.json(article);
+});
+
 // 8. WIZARD POLL CREATION
 app.post("/api/polls/create", async (req, res) => {
   const authHeader = req.headers.authorization;
