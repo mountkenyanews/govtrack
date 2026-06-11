@@ -1597,18 +1597,19 @@ app.post("/api/auth/register", async (req, res) => {
   }
 
   const nextId = DB.users.reduce((max, u) => u.id > max ? u.id : max, 0) + 1;
+  const finalRole = (role === "admin" ? "citizen" : (role || "citizen")) as User["role"];
   const newUser: User = {
     id: nextId,
     display_name,
     email,
-    role: (role || "citizen") as User["role"],
+    role: finalRole,
     country: country || "Global",
     polls_created: 0,
     polls_voted: 0,
     joined_at: new Date().toISOString(),
     bio: bio || "",
     avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(display_name)}&background=random&bold=true`,
-    verified: role === "journalist" || role === "analyst" ? true : false, // Verify analysts/journalists for convenience
+    verified: finalRole === "journalist" || finalRole === "analyst" ? true : false, // Verify analysts/journalists for convenience
   };
 
   DB.users.push(newUser);
@@ -1779,8 +1780,13 @@ app.put("/api/auth/profile", async (req, res) => {
   if (bio !== undefined) DB.users[userIndex].bio = bio;
   if (country) DB.users[userIndex].country = country;
   if (avatar_url) DB.users[userIndex].avatar_url = avatar_url;
+
+  // Prevent privilege/role self-escalation: Non-admin users cannot change their role.
+  const currentUser = DB.users[userIndex];
   if (role && ["citizen", "journalist", "analyst", "admin"].includes(role)) {
-    DB.users[userIndex].role = role as User["role"];
+    if (currentUser.role === "admin" || currentUser.role === role) {
+      DB.users[userIndex].role = role as User["role"];
+    }
   }
 
   await saveDatabase();
