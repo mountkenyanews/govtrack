@@ -72,6 +72,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [aiDevDrafts, setAiDevDrafts] = useState<any[]>([]);
   const [devSearchTerm, setDevSearchTerm] = useState("");
   const [isMassGenerating, setIsMassGenerating] = useState(false);
+  const [polSearchForOption, setPolSearchForOption] = useState("");
 
   // Available tabs: politicians, polls, news, comments, security, developments, parties, settings
   const [activeTab, setActiveTab] = useState<"leaders" | "polls" | "news" | "comments" | "security" | "developments" | "parties" | "settings">("leaders");
@@ -1850,6 +1851,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
                               </span>
                               
                               <div className="flex flex-wrap items-center gap-2">
+                                <input 
+                                  type="text"
+                                  placeholder="🔍 Filter politicians..."
+                                  value={polSearchForOption}
+                                  onChange={e => setPolSearchForOption(e.target.value)}
+                                  className="border border-slate-300 rounded px-2 py-0.5 bg-white text-[11px] font-sans font-medium w-36 focus:outline-none focus:border-brand-blue"
+                                />
                                 <select 
                                   className="border border-slate-300 rounded px-1.5 py-1 bg-white font-sans font-medium min-w-[160px]"
                                   onChange={e => {
@@ -1857,10 +1865,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
                                     e.target.value = ""; // reset
                                   }}
                                 >
-                                  <option value="">+ Auto-fill Politician Profile...</option>
-                                  {politicians.map(pol => (
-                                    <option key={pol.id} value={pol.id}>{pol.full_name} ({pol.party})</option>
-                                  ))}
+                                  <option value="">+ Auto-fill ({politicians.filter(pol => 
+                                    pol.full_name.toLowerCase().includes(polSearchForOption.toLowerCase()) || 
+                                    pol.party.toLowerCase().includes(polSearchForOption.toLowerCase())
+                                  ).length} found)...</option>
+                                  {politicians
+                                    .filter(pol => 
+                                      pol.full_name.toLowerCase().includes(polSearchForOption.toLowerCase()) || 
+                                      pol.party.toLowerCase().includes(polSearchForOption.toLowerCase())
+                                    )
+                                    .sort((a, b) => a.full_name.localeCompare(b.full_name))
+                                    .map(pol => (
+                                      <option key={pol.id} value={pol.id}>{pol.full_name} ({pol.party})</option>
+                                    ))
+                                  }
                                 </select>
                                 <button
                                   type="button"
