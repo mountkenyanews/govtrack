@@ -45,7 +45,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     const loadHomeData = async () => {
       try {
         setLoading(true);
-        const pollsData = await api.getPolls();
+        const pollsData = await api.getPolls({ status: "active" });
         const politiciansData = await api.getPoliticians({ sort: "Approval Rating (High→Low)" });
         const newsData = await api.getNews();
         

@@ -184,7 +184,7 @@ export const BrowsePollsView: React.FC<BrowsePollsViewProps> = ({ onNavigate }) 
             <div className="space-y-1.5">
               {[
                 { value: "active", label: "Live / In Progress" },
-                { value: "closed", label: "Closed Polls" },
+                { value: "closed", label: "Archive / Closed Polls" },
                 { value: "scheduled", label: "Pending Assessment" }
               ].map((st) => {
                 const checked = selectedStatus.includes(st.value);
@@ -387,7 +387,7 @@ export const BrowsePollsView: React.FC<BrowsePollsViewProps> = ({ onNavigate }) 
                       onClick={() => handleStatusToggle(st)}
                       className="w-full flex items-center justify-between text-left text-xs text-slate-600"
                     >
-                      <span className="capitalize">{st === "scheduled" ? "Pending Review" : st}</span>
+                      <span className="capitalize">{st === "scheduled" ? "Pending Review" : st === "closed" ? "Archive / Closed Polls" : st}</span>
                       <span className="text-[#F5A623]">
                         {selectedStatus.includes(st) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                       </span>
