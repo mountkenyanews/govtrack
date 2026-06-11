@@ -29,8 +29,13 @@ if (databaseUrl) {
       },
       // Serverless connection optimizations to prevent "remaining connection slots" exhaustion errors on Aiven
       max: process.env.VERCEL ? 1 : 2,     // Limit per container: 1 on Vercel, 2 on local dev
-      idleTimeoutMillis: 1000,              // Close idle connections after 1 second to release slots instantly
-      connectionTimeoutMillis: 5000         // Fail fast if database slots are exhausted
+      idleTimeoutMillis: 10000,             // Close idle connections after 10 seconds
+      connectionTimeoutMillis: 15000,       // Wait up to 15s for a connection before failing
+      keepAlive: true                       // Send TCP keepalive packets to prevent proxy/firewall drops
+    });
+    // CRITICAL: Without this handler, idle client errors crash the Vercel function process
+    pgPool.on("error", (err) => {
+      console.error("[Postgres] Unexpected pool client error (non-fatal):", err.message);
     });
     console.log("[Postgres] Successfully initialized PostgreSQL connection pool.");
   } catch (err) {
@@ -206,7 +211,7 @@ let DB = {
   developments: [] as DevelopmentProgress[],
   credentials: {} as Record<string, string>, // email -> password (simulation)
   settings: {
-    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
   } as { hero_image_url: string }
 };
 
@@ -334,7 +339,7 @@ function seedInitialData() {
     "citizen@govtrack.co.ke": "citizen",
   };
   DB.settings = {
-    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
   };
 
   // Seed Politicians
@@ -1407,7 +1412,7 @@ async function loadDatabase() {
       }
       if (!DB.settings) {
         DB.settings = {
-          hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+          hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
         };
       }
       if (DB.politicians && Array.isArray(DB.politicians)) {
@@ -1554,9 +1559,9 @@ app.use(async (req, res, next) => {
       const isWriteRequest = req.method !== "GET";
       const now = Date.now();
       
-      // Request-level coalescing & short 2-second caching for GET reads.
+      // Request-level coalescing & 10-second caching for GET reads.
       // Force reload immediately for any write requests to prevent race overwrites.
-      if (isWriteRequest || !databaseLoadedPromise || (now - lastDbLoadTime > 2000)) {
+      if (isWriteRequest || !databaseLoadedPromise || (now - lastDbLoadTime > 10000)) {
         lastDbLoadTime = now;
         databaseLoadedPromise = loadDatabase();
       }
@@ -1660,7 +1665,28 @@ function getAuthUser(req: express.Request): User | null {
   return DB.users.find(u => u.id === userId) || null;
 }
 
-// ---------------------- NOTIFICATION API ROUTES ----------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN GUARD MIDDLEWARE
+// Protects ALL /api/admin/* routes at once.
+// Normal citizens and journalists cannot access ANY admin endpoint —
+// including vote rigging, poll editing, politician management, etc.
+// Individual handlers do NOT need their own role checks (settings endpoint
+// already has one, but this is the authoritative gate for the whole namespace).
+// ─────────────────────────────────────────────────────────────────────────────
+app.use("/api/admin", (req, res, next) => {
+  const user = getAuthUser(req);
+  if (!user) {
+    return res.status(401).json({ error: "Authentication required. Please log in." });
+  }
+  if (user.role !== "admin") {
+    return res.status(403).json({ 
+      error: "Access denied. This operation requires administrator privileges." 
+    });
+  }
+  next(); // ✅ Only admins reach here
+});
+
+
 app.get("/api/notifications", (req, res) => {
   const user = getAuthUser(req);
   if (!user) {
@@ -2615,7 +2641,7 @@ app.get("/api/admin/stats", (req, res) => {
 app.get("/api/settings", (req, res) => {
   if (!DB.settings) {
     DB.settings = {
-      hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+      hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
     };
   }
   res.json(DB.settings);
@@ -2630,7 +2656,7 @@ app.post("/api/admin/settings", async (req, res) => {
   const { hero_image_url } = req.body;
   if (!DB.settings) {
     DB.settings = {
-      hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+      hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
     };
   }
   

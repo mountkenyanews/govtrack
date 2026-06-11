@@ -38,7 +38,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   });
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [settings, setSettings] = useState<{ hero_image_url: string }>({
-    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
+    hero_image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg"
   });
 
   useEffect(() => {

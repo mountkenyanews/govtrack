@@ -77,7 +77,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [activeTab, setActiveTab] = useState<"leaders" | "polls" | "news" | "comments" | "security" | "developments" | "parties" | "settings">("leaders");
   
   // Platform Settings State
-  const [heroImageUrlInput, setHeroImageUrlInput] = useState("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg");
+  const [heroImageUrlInput, setHeroImageUrlInput] = useState("https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg");
   const [isUploadingHeroPhoto, setIsUploadingHeroPhoto] = useState(false);
 
   // Political Party Form State
@@ -3089,7 +3089,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         className="w-full h-full object-cover opacity-60 transition-opacity duration-300 object-center"
                         onError={(e) => {
                           // Fallback to default in case image fails to load in preview
-                          (e.target as HTMLImageElement).src = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg";
+                          (e.target as HTMLImageElement).src = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/General_Assembly_Hall.jpg/1280px-General_Assembly_Hall.jpg";
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628] via-[#0a1628]/85 to-transparent"></div>
